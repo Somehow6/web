@@ -34,6 +34,24 @@
         header { text-align: center; margin-bottom: 2.5rem; }
         header h1 { font-size: 2.5rem; font-weight: 700; color: var(--primary-color); margin: 0; }
         header p { font-size: 1.1rem; color: var(--subtle-text); margin-top: 0.5rem; }
+        
+        /* --- 新增样式：导航按钮 --- */
+        .nav-button {
+            display: inline-block;
+            margin-top: 1.5rem;
+            padding: 0.6rem 1.2rem;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+        .nav-button:hover {
+            background-color: var(--primary-hover);
+        }
+        /* --- 新增样式结束 --- */
+
         .main-container { display: flex; flex-direction: column; gap: 2.5rem; }
         .panel {
             background: var(--container-bg); border-radius: var(--border-radius);
@@ -83,7 +101,6 @@
         }
         #preview-status { margin-top: 1rem; color: var(--subtle-text); font-style: italic; }
 
-        /* 新增：链接与复制按钮的样式 */
         .link-wrapper {
             display: flex;
             align-items: center;
@@ -133,7 +150,9 @@
         <header>
             <h1>Mermaid 图表在线生成器</h1>
             <p>输入 Mermaid 代码，即刻生成可分享的图表链接与高清预览</p>
-        </header>
+            
+            <a href="decoder.html" class="nav-button">前往链接解析器 &rarr;</a>
+            </header>
 
         <div class="main-container">
             <div class="panel">
@@ -170,7 +189,7 @@
     </div>
     
     <script>
-        // 获取元素部分保持不变
+        // --- JavaScript部分无需任何改动 ---
         const codeInputElement = document.getElementById('codeInput');
         const themeSelector = document.getElementById('themeSelector');
         const bgColorPicker = document.getElementById('bgColorPicker');
@@ -184,7 +203,6 @@
         let abortController = null;
         let copyTimeout = null;
 
-        // **新增：处理复制按钮点击的逻辑**
         resultLinksContainer.addEventListener('click', function(event) {
             const button = event.target.closest('.copy-btn');
             if (!button) return;
@@ -199,7 +217,6 @@
                     button.classList.add('copied');
                     button.disabled = true;
 
-                    // 清除上一个定时器，以防用户连续点击
                     clearTimeout(copyTimeout);
                     copyTimeout = setTimeout(() => {
                         button.textContent = originalText;
@@ -213,7 +230,6 @@
             }
         });
 
-        // updateOutput 函数保持不变
         function updateOutput() {
             if (abortController) abortController.abort();
             abortController = new AbortController();
