@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mermaid 链接解析器</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-base64@3.7.7/base64.min.js"></script>
+    <style>
+        /* 样式与原文件完全一致，确保风格统一 */
+        :root {
+            --primary-color: #4A90E2;
+            --primary-hover: #4281CB;
+            --success-color: #28a745;
+            --background-color: #F7F9FC;
+            --container-bg: #FFFFFF;
+            --text-color: #333D49;
+            --subtle-text: #8A94A6;
+            --border-color: #E0E6ED;
+            --shadow: 0 10px 30px rgba(74, 144, 226, 0.1);
+            --border-radius: 12px;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0; padding: 2.5rem;
+            display: flex; justify-content: center;
+        }
+        .app-container { width: 100%; max-width: 960px; }
+        header { text-align: center; margin-bottom: 2.5rem; }
+        header h1 { font-size: 2.5rem; font-weight: 700; color: var(--primary-color); margin: 0; }
+        header p { font-size: 1.1rem; color: var(--subtle-text); margin-top: 0.5rem; }
+        .main-container { display: flex; flex-direction: column; gap: 2.5rem; }
+        .panel {
+            background: var(--container-bg); border-radius: var(--border-radius);
+            box-shadow: var(--shadow); padding: 2rem;
+            transition: box-shadow 0.3s ease;
+        }
+        .panel:hover { box-shadow: 0 15px 35px rgba(74, 144, 226, 0.15); }
+        .panel-title {
+            font-size: 1.5rem; font-weight: 500; margin: 0 0 1.5rem 0;
+            border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;
+        }
+        .form-group { margin-bottom: 1.5rem; position: relative; }
+        .form-group:last-child { margin-bottom: 0; }
+        .form-group label { display: block; font-weight: 500; margin-bottom: 0.75rem; }
+        input[type="text"], textarea {
+            width: 100%; padding: 0.75rem 1rem; font-size: 1rem;
+            border: 1px solid var(--border-color); border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        input[type="text"]:focus, textarea:focus {
+            outline: none; border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+        }
+        textarea {
+            font-family: 'SF Mono', 'Courier New', Courier, monospace;
+            resize: vertical; min-height: 250px;
+            background-color: #fdfdfd;
+        }
+        #preview-image {
+            width: 100%; border: 1px solid var(--border-color);
+            border-radius: 8px; background-color: var(--white);
+            min-height: 150px; display: block; margin-top: 1rem;
+        }
+        #status-message { margin-top: 1rem; color: var(--subtle-text); font-style: italic; }
+        .decoded-options {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+            background-color: #f9f9f9; padding: 1rem; border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        .decoded-options p { margin: 0; font-size: 0.95rem; }
+        .decoded-options strong { color: var(--primary-color); }
+        .copy-btn {
+            font-size: 0.8rem; padding: 0.4rem 0.8rem;
+            background-color: var(--container-bg); border: 1px solid var(--border-color);
+            color: var(--primary-color); border-radius: 6px; cursor: pointer;
+            transition: all 0.2s ease; white-space: nowrap;
+            position: absolute; top: 0; right: 0;
+        }
+        .copy-btn:hover {
+            border-color: var(--primary-color); background-color: var(--primary-color); color: white;
+        }
+        .copy-btn.copied {
+            background-color: var(--success-color); border-color: var(--success-color); color: white;
+        }
+        @media (max-width: 600px) {
+            .decoded-options { grid-template-columns: 1fr; }
+            body { padding: 1.5rem; }
+            header h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header>
+            <h1>Mermaid 链接解析器</h1>
+            <p>粘贴 mermaid.ink 链接，自动解码出源代码并显示预览</p>
+        </header>
+
+        <div class="main-container">
+            <div class="panel">
+                <h2 class="panel-title">1. 粘贴链接</h2>
+                <div class="form-group">
+                    <label for="urlInput">Mermaid.ink 链接</label>
+                    <input type="text" id="urlInput" oninput="decodeUrl()" placeholder="https://mermaid.ink/img/pako:...">
+                </div>
+            </div>
+
+            <div class="panel" id="result-panel" style="display: none;">
+                <h2 class="panel-title">2. 解码结果</h2>
+                <div id="decoded-options-container" class="form-group" style="display: none;">
+                    <label>解析出的配置</label>
+                    <div class="decoded-options">
+                        <p><strong>主题:</strong> <span id="themeOutput"></span></p>
+                        <p><strong>背景色:</strong> <span id="bgColorOutput"></span></p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="codeOutput">Mermaid 代码</label>
+                    <textarea id="codeOutput" readonly rows="15"></textarea>
+                    <button class="copy-btn" id="copyCodeBtn">复制</button>
+                </div>
+                <div class="form-group">
+                    <label>图表预览</label>
+                    <img id="preview-image" src="" alt="Mermaid 图表预览">
+                </div>
+            </div>
+             <div class="panel" id="status-panel" style="display: none;">
+                <p id="status-message"></p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 获取页面元素
+        const urlInputElement = document.getElementById('urlInput');
+        const resultPanel = document.getElementById('result-panel');
+        const statusPanel = document.getElementById('status-panel');
+        const statusMessage = document.getElementById('status-message');
+        const codeOutputElement = document.getElementById('codeOutput');
+        const previewImageElement = document.getElementById('preview-image');
+        const copyCodeBtn = document.getElementById('copyCodeBtn');
+        
+        const decodedOptionsContainer = document.getElementById('decoded-options-container');
+        const themeOutput = document.getElementById('themeOutput');
+        const bgColorOutput = document.getElementById('bgColorOutput');
+        let copyTimeout = null;
+
+        /**
+         * 解码 mermaid.ink URL 的核心函数
+         */
+        function decodeUrl() {
+            const urlString = urlInputElement.value.trim();
+
+            // 如果输入为空，则隐藏结果面板
+            if (!urlString) {
+                resultPanel.style.display = 'none';
+                statusPanel.style.display = 'none';
+                return;
+            }
+
+            try {
+                // 1. 从 URL 中提取 pako 编码的字符串
+                const pakoMatch = urlString.match(/pako:([a-zA-Z0-9-_]+)/);
+                if (!pakoMatch || !pakoMatch[1]) {
+                    throw new Error("链接格式无效，未找到 'pako:' 编码部分。");
+                }
+                const base64String = pakoMatch[1];
+
+                // 2. Base64 解码 -> Uint8Array
+                // 我们需要使用 Base64.toUint8Array 进行解码
+                const compressedData = Base64.toUint8Array(base64String, true);
+
+                // 3. Pako 解压缩
+                //
