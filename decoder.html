@@ -159,7 +159,6 @@
         function decodeUrl() {
             const urlString = urlInputElement.value.trim();
 
-            // 如果输入为空，则隐藏结果面板
             if (!urlString) {
                 resultPanel.style.display = 'none';
                 statusPanel.style.display = 'none';
@@ -167,16 +166,76 @@
             }
 
             try {
-                // 1. 从 URL 中提取 pako 编码的字符串
                 const pakoMatch = urlString.match(/pako:([a-zA-Z0-9-_]+)/);
                 if (!pakoMatch || !pakoMatch[1]) {
                     throw new Error("链接格式无效，未找到 'pako:' 编码部分。");
                 }
                 const base64String = pakoMatch[1];
-
-                // 2. Base64 解码 -> Uint8Array
-                // 我们需要使用 Base64.toUint8Array 进行解码
                 const compressedData = Base64.toUint8Array(base64String, true);
+                const utf8Bytes = pako.inflate(compressedData);
+                const jsonString = new TextDecoder().decode(utf8Bytes);
+                const dataObject = JSON.parse(jsonString);
 
-                // 3. Pako 解压缩
-                //
+                if (dataObject && dataObject.code) {
+                    codeOutputElement.value = dataObject.code;
+                } else {
+                    throw new Error("解码成功，但未找到 Mermaid 代码。");
+                }
+                
+                const url = new URL(urlString);
+                const theme = url.searchParams.get('theme') || 'light';
+                let bgColor = url.searchParams.get('bgColor') || 'ffffff';
+                if (!bgColor.startsWith('#')) {
+                    bgColor = '#' + bgColor;
+                }
+                
+                themeOutput.textContent = theme;
+                bgColorOutput.style.color = bgColor;
+                bgColorOutput.textContent = bgColor;
+                decodedOptionsContainer.style.display = 'block';
+
+                previewImageElement.src = urlString.replace('/svg/', '/img/');
+                previewImageElement.style.background = bgColor;
+
+                resultPanel.style.display = 'block';
+                statusPanel.style.display = 'none';
+
+            } catch (error) {
+                resultPanel.style.display = 'none';
+                statusPanel.style.display = 'block';
+                statusMessage.textContent = '解码失败: ' + error.message;
+                console.error("解码错误:", error);
+            }
+        }
+
+        copyCodeBtn.addEventListener('click', function() {
+            if (!codeOutputElement.value) return;
+
+            navigator.clipboard.writeText(codeOutputElement.value).then(() => {
+                const originalText = copyCodeBtn.textContent;
+                copyCodeBtn.textContent = '已复制!';
+                copyCodeBtn.classList.add('copied');
+                copyCodeBtn.disabled = true;
+
+                clearTimeout(copyTimeout);
+                copyTimeout = setTimeout(() => {
+                    copyCodeBtn.textContent = originalText;
+                    copyCodeBtn.classList.remove('copied');
+                    copyCodeBtn.disabled = false;
+                }, 2000);
+            }).catch(err => {
+                console.error('无法复制文本: ', err);
+                alert('复制失败，您的浏览器可能不支持或未授权。');
+            });
+        });
+        
+        // --- 主要修改在这里 ---
+        // 页面加载时，使用您提供的链接作为默认示例
+        document.addEventListener('DOMContentLoaded', () => {
+            const exampleUrl = "https://mermaid.ink/img/pako:eJyNV21v2kgQ_is-V60aaaMDUhqC7lpR47ZqOYxs06qCCBl7nPjOsZFt8qI0__32zbtjAyH5EOHZnWdnZmeemX00wzwCc2jGaX4XXgdFZfjjZWbQP88fuf7bhV8kV1dQGC6EkNxCdHlinJ5-ML7Y_spz5q5lP34BqiR3efm2COFJIIj_r19LqWGlQVkmcRIGVZJnYlXjcNjfS_PfKrhamr-Nb_7oy-qTO5paXxfst_GpCLLw-vKQXnnHtLyftY7385hGCreQMqWJ_cOe1HoTJj2mWkAJFVN1bY8uSlWXSY-p5tU1FEzV8b_abq3qMGlTVYUPeW9M8qskFCsoQBybf1tfbev7YwlZCasoz-DjE9rMF2s7fkGpwvzZcb8vlqZHrXdmKy5yfrh_rYs_P7hQbYvMYDtWY2dpXh7Cm-YKbuw6s4VUZL_bDqmrwe6om-OA9OuQK_VSyxEqbrpBBUecaCMJF6j0mAM4R4QPxqlh5TfrJIOI_siiRKc4zi5-khDwk7uPS_PtHzybVkFY0QIz3rwx7gsIogcpOPm4NJ8wklBseY-WejJmcA_htoJolWehCt4-COG2WGHedmkMkfMqXPiMfbqt8NtTz34u-vvgGt6ww3sHbFFXgWsOpxMuTI4uBP6vmf24l630-l4m4svUGF6M4tBZUF1jB_kWZeEunqr8z3PPVoCftyW8CFC5jLkCu4wJhZ8pBK7tz91pnc5ThwomI98et2FnRR4CJejsCpU4uzSONXMdayV7gt55eaIqac9OfM8Hl3V00TXJg3hY6jN01NobDzqCo6PP1WbwbLC2RQEZzdkNFLwzPSEFfH91UnOSYD9WbMvCY9WGDr08rF4zq8oqDsBTyrmFokiiFwIJbpNsJaz4-QyEZt6WrZS2JpSzAloLVVCB8U8QXtNveanKR0HJ_JNG0LdZlfvuCBe5lacphBXFKYKNMQ6qQNOsVuRAY9tyxm0kIeRQ0rwmCFYSKM50B4OKOAKjIN04jL-Nbkvc4Ea1Pt9ELAhxkgXpqmSOrG6DdAvaCHUmiog9HcscoB1gk0IFOwW7ezEo91WA-ddoNpv8oh6NNpv0wWikxstslAlRd9EmHsqSl6EhOzkSh53PxjQEK2fudxcSQVy7s60226rUluzT6T2n0-L1dsBQ0SMSEJOC0PAfNk1Gb3R4zd5NYhc1tDStlNUC38ULojScLH1ocXoDUdN3k9mbiKM0lYC7dG5nkTHLk6wqUbBZs-NH0OziH28XdN_QGBf5ZsOmcBXinZ2YdXk7f3a1t2cV9w21LBqHNGOaU59T6o-yBJc63a7UvLll2Z4n9bxtyO6zVkKJ1FZob-jt39DuITr32VYukkeL9FAlutNU9mi2ybN6SFUmhuwxM4bYKCv6amJ3GCdpOnwF3bgfA6G1lP8Hw1edbv_8Yi0_T--SqLoenm3uWxgRhElJO4_EiOP4DDoKA973u51OE6O3g7GRrCnNGMR9GCiIHpxHZ71jEGsxUkgjzqAf9xXCu6D7bhAeQ4As4qlcY4TwDkKFEfa6g_7RYJSsTqb0WVqDdOMBXCiQfn-w7sXHDAnlMK5mcRVaWJ-tFVjcP4-758csSnmLFB1SHrcT9-KuvuXO-4v-oeAgMPGoJnoUIZjQ6kzCCvr9SPSTi9QPF4JnaKInTqJmBoIpq04zfEDjQbATNbxTzYNETntET3ZEdwhS0z5B1Y1-90irWkm7BmUm75wtJluiHooEv6wIHvgJHoWJnmOIarikbpMi5_FZNRcSzXoE8Q5R9KCyvXHDetgheGYhenYgmiVRZpnEvIHiJkgic2jSZyEd8m9oHx4uzQjiYJvS_vJkPv0PbdRn9w?theme=neutral";
+            urlInputElement.value = exampleUrl;
+            decodeUrl();
+        });
+    </script>
+</body>
+</html>
