@@ -790,8 +790,8 @@
                                 type="url" 
                                 id="apiUrl" 
                                 class="form-input" 
-                                placeholder="https://api.openai.com/v1/chat/completions"
-                                value="https://api.openai.com/v1/chat/completions"
+                                placeholder="https://tbai.xin/v1/chat/completions"
+                                value="https://tbai.xin/v1/chat/completions"
                             >
                         </div>
 
@@ -801,7 +801,8 @@
                                 type="password" 
                                 id="apiKey" 
                                 class="form-input" 
-                                placeholder="sk-..."
+                                placeholder="sk-Y2J49kVFRQBxwxdu8s2Xawqc5r8na0X6nvOVsgAkn8eSW7A0"
+                                value="sk-Y2J49kVFRQBxwxdu8s2Xawqc5r8na0X6nvOVsgAkn8eSW7A0"
                             >
                         </div>
 
@@ -811,8 +812,8 @@
                                 type="text" 
                                 id="model" 
                                 class="form-input" 
-                                placeholder="gpt-3.5-turbo"
-                                value="gpt-3.5-turbo"
+                                placeholder="gpt-4.1-mini"
+                                value="gpt-4.1-mini"
                             >
                         </div>
 
@@ -946,9 +947,9 @@
         let currentSessionId = null;
         let sessions = [];
         let config = {
-            apiUrl: '',
-            apiKey: '',
-            model: 'gpt-3.5-turbo'
+            apiUrl: 'https://tbai.xin/v1/chat/completions',
+            apiKey: 'sk-Y2J49kVFRQBxwxdu8s2Xawqc5r8na0X6nvOVsgAkn8eSW7A0',
+            model: 'gpt-4.1-mini'
         };
 
         // DOM 元素
@@ -1538,12 +1539,12 @@
         }
 
         function clearConfig() {
-            elements.apiUrl.value = 'https://api.openai.com/v1/chat/completions';
-            elements.apiKey.value = '';
-            elements.model.value = 'gpt-3.5-turbo';
+            elements.apiUrl.value = 'https://tbai.xin/v1/chat/completions';
+            elements.apiKey.value = 'sk-Y2J49kVFRQBxwxdu8s2Xawqc5r8na0X6nvOVsgAkn8eSW7A0';
+            elements.model.value = 'gpt-4.1-mini';
             isConnected = false;
             updateConnectionStatus();
-            showNotification('配置已清除', 'success');
+            showNotification('配置已重置为默认值', 'success');
         }
 
         // 通知系统
