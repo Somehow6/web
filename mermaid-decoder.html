@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mermaid 链接解析器 - Somehow的百宝箱</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-base64@3.7.7/base64.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4A90E2;
+            --primary-hover: #4281CB;
+            --secondary-color: #6C5CE7;
+            --accent-color: #00CDB7;
+            --success-color: #28a745;
+            --warning-color: #FFA726;
+            --background-color: #F8FAFD;
+            --container-bg: #FFFFFF;
+            --text-color: #2C3E50;
+            --subtle-text: #7B8794;
+            --border-color: #E1E8ED;
+            --shadow-light: 0 4px 20px rgba(74, 144, 226, 0.08);
+            --shadow-medium: 0 8px 30px rgba(74, 144, 226, 0.12);
+            --shadow-heavy: 0 15px 40px rgba(74, 144, 226, 0.15);
+            --border-radius: 16px;
+            --gradient-primary: linear-gradient(135deg, #4A90E2 0%, #6C5CE7 100%);
+            --gradient-accent: linear-gradient(135deg, #00CDB7 0%, #4A90E2 100%);
+        }
+
+        /* 暗黑模式变量 */
+        [data-theme="dark"] {
+            --background-color: #0D1117;
+            --container-bg: #161B22;
+            --text-color: #F0F6FC;
+            --subtle-text: #7D8590;
+            --border-color: #30363D;
+            --shadow-light: 0 4px 20px rgba(0, 0, 0, 0.3);
+            --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.4);
+            --shadow-heavy: 0 15px 40px rgba(0, 0, 0, 0.5);
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0; padding: 2.5rem;
+            display: flex; justify-content: center;
+        }
+        .app-container { width: 100%; max-width: 960px; }
+        header { text-align: center; margin-bottom: 2.5rem; }
+        header h1 { font-size: 2.5rem; font-weight: 700; color: var(--primary-color); margin: 0; }
+        header p { font-size: 1.1rem; color: var(--subtle-text); margin-top: 0.5rem; }
+        
+        .nav-button {
+            display: inline-block;
+            margin: 0.5rem;
+            padding: 0.6rem 1.2rem;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+        .nav-button:hover {
+            background-color: var(--primary-hover);
+        }
+        
+        .main-container { display: flex; flex-direction: column; gap: 2.5rem; }
+        .panel {
+            background: var(--container-bg); border-radius: var(--border-radius);
+            box-shadow: var(--shadow-light); padding: 2rem;
+            transition: box-shadow 0.3s ease;
+        }
+        .panel:hover { box-shadow: var(--shadow-heavy); }
+        .panel-title {
+            font-size: 1.5rem; font-weight: 500; margin: 0 0 1.5rem 0;
+            border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;
+        }
+        .form-group { margin-bottom: 1.5rem; position: relative; }
+        .form-group:last-child { margin-bottom: 0; }
+        .form-group label { display: block; font-weight: 500; margin-bottom: 0.75rem; }
+        input[type="text"], textarea {
+            width: 100%; padding: 0.75rem 1rem; font-size: 1rem;
+            border: 1px solid var(--border-color); border-radius: 8px;
+            transition: all 0.3s ease;
+            background: var(--container-bg);
+            color: var(--text-color);
+        }
+        input[type="text"]:focus, textarea:focus {
+            outline: none; border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+        }
+        textarea {
+            font-family: 'SF Mono', 'Courier New', Courier, monospace;
+            resize: vertical; min-height: 250px;
+            background-color: var(--container-bg);
+        }
+        #preview-image {
+            width: 100%; border: 1px solid var(--border-color);
+            border-radius: 8px; background-color: var(--container-bg);
+            min-height: 150px; display: block; margin-top: 1rem;
+        }
+        #status-message { margin-top: 1rem; color: var(--subtle-text); font-style: italic; }
+        .decoded-options {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+            background-color: var(--border-color); padding: 1rem; border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        .decoded-options p { margin: 0; font-size: 0.95rem; }
+        .decoded-options strong { color: var(--primary-color); }
+        .copy-btn {
+            font-size: 0.8rem; padding: 0.4rem 0.8rem;
+            background-color: var(--container-bg); border: 1px solid var(--border-color);
+            color: var(--primary-color); border-radius: 6px; cursor: pointer;
+            transition: all 0.2s ease; white-space: nowrap;
+            position: absolute; top: 0; right: 0;
+        }
+        .copy-btn:hover {
+            border-color: var(--primary-color); background-color: var(--primary-color); color: white;
+        }
+        .copy-btn.copied {
+            background-color: var(--success-color); border-color: var(--success-color); color: white;
+        }
+        
+        /* 主题切换按钮 */
+        .theme-toggle {
+            background: var(--container-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            box-shadow: var(--shadow-light);
+        }
+
+        .theme-toggle:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+            transform: scale(1.1);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .theme-icon {
+            font-size: 1.3rem;
+            transition: all 0.3s ease;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* 太阳图标样式 */
+        .theme-icon.sun {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) rotate(0deg) scale(1);
+        }
+
+        /* 月亮图标样式 */
+        .theme-icon.moon {
+            opacity: 0;
+            visibility: hidden;
+            transform: translate(-50%, -50%) rotate(180deg) scale(0.5);
+        }
+
+        /* 暗黑模式下的图标切换 */
+        [data-theme="dark"] .theme-icon.sun {
+            opacity: 0;
+            visibility: hidden;
+            transform: translate(-50%, -50%) rotate(-180deg) scale(0.5);
+        }
+
+        [data-theme="dark"] .theme-icon.moon {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) rotate(0deg) scale(1);
+        }
+
+        /* 暗黑模式下按钮样式优化 */
+        [data-theme="dark"] .theme-toggle {
+            background: var(--container-bg);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 10px rgba(74, 144, 226, 0.3);
+        }
+
+        [data-theme="dark"] .theme-toggle:hover {
+            background: var(--primary-color);
+            box-shadow: 0 0 15px rgba(74, 144, 226, 0.5);
+        }
+        
+        @media (max-width: 600px) {
+            .decoded-options { grid-template-columns: 1fr; }
+            body { padding: 1.5rem; }
+            header h1 { font-size: 2rem; }
+            .theme-toggle {
+                top: 10px;
+                right: 10px;
+                width: 40px;
+                height: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 主题切换按钮 -->
+    <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">
+        <span class="theme-icon sun">☀️</span>
+        <span class="theme-icon moon">🌙</span>
+    </button>
+
+    <div class="app-container">
+        <header>
+            <h1>Mermaid 链接解析器</h1>
+            <p>粘贴 mermaid.ink 链接，自动解码出源代码并显示预览</p>
+            
+            <a href="index.html" class="nav-button">← 返回首页</a>
+            <a href="mermaid-generator.html" class="nav-button">前往图表生成器 →</a>
+        </header>
+
+        <div class="main-container">
+            <div class="panel">
+                <h2 class="panel-title">1. 粘贴链接</h2>
+                <div class="form-group">
+                    <label for="urlInput">Mermaid.ink 链接</label>
+                    <input type="text" id="urlInput" oninput="decodeUrl()" placeholder="https://mermaid.ink/img/pako:...">
+                </div>
+            </div>
+
+            <div class="panel" id="result-panel" style="display: none;">
+                <h2 class="panel-title">2. 解码结果</h2>
+                <div id="decoded-options-container" class="form-group" style="display: none;">
+                    <label>解析出的配置</label>
+                    <div class="decoded-options">
+                        <p><strong>主题:</strong> <span id="themeOutput"></span></p>
+                        <p><strong>背景色:</strong> <span id="bgColorOutput"></span></p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="codeOutput">Mermaid 代码</label>
+                    <textarea id="codeOutput" readonly rows="15"></textarea>
+                    <button class="copy-btn" id="copyCodeBtn">复制</button>
+                </div>
+                <div class="form-group">
+                    <label>图表预览</label>
+                    <img id="preview-image" src="" alt="Mermaid 图表预览">
+                </div>
+            </div>
+             <div class="panel" id="status-panel" style="display: none;">
+                <p id="status-message"></p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="./dark-mode.js"></script>
+    <script>
+        const urlInputElement = document.getElementById('urlInput');
+        const resultPanel = document.getElementById('result-panel');
+        const statusPanel = document.getElementById('status-panel');
+        const statusMessage = document.getElementById('status-message');
+        const codeOutputElement = document.getElementById('codeOutput');
+        const previewImageElement = document.getElementById('preview-image');
+        const copyCodeBtn = document.getElementById('copyCodeBtn');
+        
+        const decodedOptionsContainer = document.getElementById('decoded-options-container');
+        const themeOutput = document.getElementById('themeOutput');
+        const bgColorOutput = document.getElementById('bgColorOutput');
+        let copyTimeout = null;
+
+        function decodeUrl() {
+            const urlString = urlInputElement.value.trim();
+
+            if (!urlString) {
+                resultPanel.style.display = 'none';
+                statusPanel.style.display = 'none';
+                return;
+            }
+
+            try {
+                const pakoMatch = urlString.match(/pako:([a-zA-Z0-9-_]+)/);
+                if (!pakoMatch || !pakoMatch[1]) {
+                    throw new Error("链接格式无效，未找到 'pako:' 编码部分。");
+                }
+                const base64String = pakoMatch[1];
+                const compressedData = Base64.toUint8Array(base64String, true);
+                const utf8Bytes = pako.inflate(compressedData);
+                const jsonString = new TextDecoder().decode(utf8Bytes);
+                const dataObject = JSON.parse(jsonString);
+
+                if (dataObject && dataObject.code) {
+                    codeOutputElement.value = dataObject.code;
+                } else {
+                    throw new Error("解码成功，但未找到 Mermaid 代码。");
+                }
+                
+                const url = new URL(urlString);
+                const theme = url.searchParams.get('theme') || 'light';
+                let bgColor = url.searchParams.get('bgColor') || 'ffffff';
+                if (!bgColor.startsWith('#')) {
+                    bgColor = '#' + bgColor;
+                }
+                
+                themeOutput.textContent = theme;
+                bgColorOutput.style.color = bgColor;
+                bgColorOutput.textContent = bgColor;
+                decodedOptionsContainer.style.display = 'block';
+
+                previewImageElement.src = urlString.replace('/svg/', '/img/');
+                previewImageElement.style.background = bgColor;
+
+                resultPanel.style.display = 'block';
+                statusPanel.style.display = 'none';
+
+            } catch (error) {
+                resultPanel.style.display = 'none';
+                statusPanel.style.display = 'block';
+                statusMessage.textContent = '解码失败: ' + error.message;
+                console.error("解码错误:", error);
+            }
+        }
+
+        copyCodeBtn.addEventListener('click', function() {
+            if (!codeOutputElement.value) return;
+
+            navigator.clipboard.writeText(codeOutputElement.value).then(() => {
+                const originalText = copyCodeBtn.textContent;
+                copyCodeBtn.textContent = '已复制!';
+                copyCodeBtn.classList.add('copied');
+                copyCodeBtn.disabled = true;
+
+                clearTimeout(copyTimeout);
+                copyTimeout = setTimeout(() => {
+                    copyCodeBtn.textContent = originalText;
+                    copyCodeBtn.classList.remove('copied');
+                    copyCodeBtn.disabled = false;
+                }, 2000);
+            }).catch(err => {
+                console.error('无法复制文本: ', err);
+                alert('复制失败，您的浏览器可能不支持或未授权。');
+            });
+        });
+        
+        // 主题切换功能
+        function toggleTheme() {
+            if (window.darkModeManager) {
+                window.darkModeManager.toggleTheme();
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const exampleUrl = "https://mermaid.ink/img/pako:eJyNV21v2kgQ_is-V60aaaMDUhqC7lpR47ZqOYxs06qCCBl7nPjOsZFt8qI0__32zbtjAyH5EOHZnWdnZmeemX00wzwCc2jGaX4XXgdFZfjjZWbQP88fuf7bhV8kV1dQGC6EkNxCdHlinJ5-ML7Y_spz5q5lP34BqiR3efm2COFJIIj_r19LqWGlQVkmcRIGVZJnYlXjcNjfS_PfKrhamr-Nb_7oy-qTO5paXxfst_GpCLLw-vKQXnnHtLyftY7385hGCreQMqWJ_cOe1HoTJj2mWkAJFVN1bY8uSlWXSY-p5tU1FEzV8b_abq3qMGlTVYUPeW9M8qskFCsoQBybf1tfbev7YwlZCasoz-DjE9rMF2s7fkGpwvzZcb8vlqZHrXdmKy5yfrh_rYs_P7hQbYvMYDtWY2dpXh7Cm-YKbuw6s4VUZL_bDqmrwe6om-OA9OuQK_VSyxEqbrpBBUecaCMJF6j0mAM4R4QPxqlh5TfrJIOI_siiRKc4zi5-khDwk7uPS_PtHzybVkFY0QIz3rwx7gsIogcpOPm4NJ8wklBseY-WejJmcA_htoJolWehCt4-COG2WGHedmkMkfMqXPiMfbqt8NtTz34u-vvgGt6ww3sHbFFXgWsOpxMuTI4uBP6vmf24l630-l4m4svUGF6M4tBZUF1jB_kWZeEunqr8z3PPVoCftyW8CFC5jLkCu4wJhZ8pBK7tz91pnc5ThwomI98et2FnRR4CJejsCpU4uzSONXMdayV7gt55eaIqac9OfM8Hl3V00TXJg3hY6jN01NobDzqCo6PP1WbwbLC2RQEZzdkNFLwzPSEFfH91UnOSYD9WbMvCY9WGDr08rF4zq8oqDsBTyrmFokiiFwIJbpNsJaz4-QyEZt6WrZS2JpSzAloLVVCB8U8QXtNveanKR0HJ_JNG0LdZlfvuCBe5lacphBXFKYKNMQ6qQNOsVuRAY9tyxm0kIeRQ0rwmCFYSKM50B4OKOAKjIN04jL-Nbkvc4Ea1Pt9ELAhxkgXpqmSOrG6DdAvaCHUmiog9HcscoB1gk0IFOwW7ezEo91WA-ddoNpv8oh6NNpv0wWikxstslAlRd9EmHsqSl6EhOzkSh53PxjQEK2fudxcSQVy7s60226rUluzT6T2n0-L1dsBQ0SMSEJOC0PAfNk1Gb3R4zd5NYhc1tDStlNUC38ULojScLH1ocXoDUdN3k9mbiKM0lYC7dG5nkTHLk6wqUbBZs-NH0OziH28XdN_QGBf5ZsOmcBXinZ2YdXk7f3a1t2cV9w21LBqHNGOaU59T6o-yBJc63a7UvLll2Z4n9bxtyO6zVkKJ1FZob-jt39DuITr32VYukkeL9FAlutNU9mi2ybN6SFUmhuwxM4bYKCv6amJ3GCdpOnwF3bgfA6G1lP8Hw1edbv_8Yi0_T--SqLoenm3uWxgRhElJO4_EiOP4DDoKA973u51OE6O3g7GRrCnNGMR9GCiIHpxHZ71jEGsxUkgjzqAf9xXCu6D7bhAeQ4As4qlcY4TwDkKFEfa6g_7RYJSsTqb0WVqDdOMBXCiQfn-w7sXHDAnlMK5mcRVaWJ-tFVjcP4-758csSnmLFB1SHrcT9-KuvuXO-4v-oeAgMPGoJnoUIZjQ6kzCCvr9SPSTi9QPF4JnaKInTqJmBoIpq04zfEDjQbATNbxTzYNETntET3ZEdwhS0z5B1Y1-90irWkm7BmUm75wtJluiHooEv6wIHvgJHoWJnmOIarikbpMi5_FZNRcSzXoE8Q5R9KCyvXHDetgheGYhenYgmiVRZpnEvIHiJkgic2jSZyEd8m9oHx4uzQjiYJvS_vJkPv0PbdRn9w?theme=neutral";
+            urlInputElement.value = exampleUrl;
+            decodeUrl();
+        });
+    </script>
+</body>
+</html>

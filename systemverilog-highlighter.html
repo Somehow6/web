@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SystemVerilog 语法高亮器 - Somehow的百宝箱</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+    <link rel="shortcut icon" href="./favicon.png">
+    <meta name="msapplication-TileImage" content="./apple-touch-icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Prism.js CSS -->
+    <link id="prism-theme" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/toolbar/prism-toolbar.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #4A90E2;
+            --primary-hover: #4281CB;
+            --secondary-color: #6C5CE7;
+            --accent-color: #00CDB7;
+            --success-color: #28a745;
+            --warning-color: #FFA726;
+            --danger-color: #e74c3c;
+            --background-color: #F8FAFD;
+            --container-bg: #FFFFFF;
+            --text-color: #2C3E50;
+            --subtle-text: #7B8794;
+            --border-color: #E1E8ED;
+            --shadow-light: 0 4px 20px rgba(74, 144, 226, 0.08);
+            --shadow-medium: 0 8px 30px rgba(74, 144, 226, 0.12);
+            --shadow-heavy: 0 15px 40px rgba(74, 144, 226, 0.15);
+            --border-radius: 16px;
+            --gradient-primary: linear-gradient(135deg, #4A90E2 0%, #6C5CE7 100%);
+            --gradient-accent: linear-gradient(135deg, #00CDB7 0%, #4A90E2 100%);
+            --code-bg: #1e1e1e;
+            --code-border: #333;
+        }
+
+        /* 暗黑模式变量 */
+        [data-theme="dark"] {
+            --background-color: #0D1117;
+            --container-bg: #161B22;
+            --text-color: #F0F6FC;
+            --subtle-text: #7D8590;
+            --border-color: #30363D;
+            --shadow-light: 0 4px 20px rgba(0, 0, 0, 0.3);
+            --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.4);
+            --shadow-heavy: 0 15px 40px rgba(0, 0, 0, 0.5);
+            --code-bg: #0d1117;
+            --code-border: #30363d;
+        }
+
+        *, *::before, *::after { 
+            box-sizing: border-box; 
+        }
+
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .bg-decoration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.03;
+            background: 
+                radial-gradient(circle at 20% 80%, var(--primary-color) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, var(--secondary-color) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, var(--accent-color) 0%, transparent 50%);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-links a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+
+        .header-section {
+            text-align: center;
+            padding: 3rem 0 2rem 0;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin: 0 0 1rem 0;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+
+        .page-subtitle {
+            font-size: 1.2rem;
+            color: var(--subtle-text);
+            margin: 0 0 2rem 0;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .panel {
+            background: var(--container-bg);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-light);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0;
+            color: var(--text-color);
+        }
+
+        .panel-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--gradient-accent);
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.25);
+        }
+
+        .theme-select {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--container-bg);
+            color: var(--text-color);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-right: 0.5rem;
+        }
+
+        .theme-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+        }
+
+        .theme-select:hover {
+            border-color: var(--primary-color);
+        }
+
+        .code-input {
+            width: 100%;
+            height: 400px;
+            padding: 1rem;
+            border: none;
+            background: var(--code-bg);
+            color: #f8f8f2;
+            font-family: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            outline: none;
+        }
+
+        .code-output {
+            min-height: 400px;
+            background: var(--code-bg);
+            overflow: auto;
+        }
+
+        .code-output pre {
+            margin: 0 !important;
+            padding: 1rem !important;
+            background: transparent !important;
+            font-family: 'JetBrains Mono', 'Consolas', 'Monaco', monospace !important;
+            font-size: 14px !important;
+            line-height: 1.5 !important;
+        }
+
+        .stats-section {
+            margin: 2rem 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: var(--container-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-light);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .stat-label {
+            color: var(--subtle-text);
+            margin: 0.5rem 0 0 0;
+            font-size: 0.9rem;
+        }
+
+        .features-section {
+            margin: 3rem 0;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .feature-card {
+            background: var(--container-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-light);
+            transition: transform 0.2s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0 0 0.5rem 0;
+            color: var(--text-color);
+        }
+
+        .feature-desc {
+            color: var(--subtle-text);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .sample-code {
+            margin: 2rem 0;
+        }
+
+        .sample-code h3 {
+            margin: 0 0 1rem 0;
+            color: var(--text-color);
+        }
+
+        .sample-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .notification {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow-medium);
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .notification.error {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        /* Prism.js 自定义样式 */
+        .line-numbers .line-numbers-rows {
+            border-right: 1px solid #555;
+        }
+
+        /* 主题切换按钮 */
+        .theme-toggle {
+            background: var(--container-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            box-shadow: var(--shadow-light);
+        }
+
+        .theme-toggle:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+            transform: scale(1.1);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .theme-icon {
+            font-size: 1.3rem;
+            transition: all 0.3s ease;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* 太阳图标样式 */
+        .theme-icon.sun {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) rotate(0deg) scale(1);
+        }
+
+        /* 月亮图标样式 */
+        .theme-icon.moon {
+            opacity: 0;
+            visibility: hidden;
+            transform: translate(-50%, -50%) rotate(180deg) scale(0.5);
+        }
+
+        /* 暗黑模式下的图标切换 */
+        [data-theme="dark"] .theme-icon.sun {
+            opacity: 0;
+            visibility: hidden;
+            transform: translate(-50%, -50%) rotate(-180deg) scale(0.5);
+        }
+
+        [data-theme="dark"] .theme-icon.moon {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) rotate(0deg) scale(1);
+        }
+
+        /* 暗黑模式下按钮样式优化 */
+        [data-theme="dark"] .theme-toggle {
+            background: var(--container-bg);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 10px rgba(74, 144, 226, 0.3);
+        }
+
+        [data-theme="dark"] .theme-toggle:hover {
+            background: var(--primary-color);
+            box-shadow: 0 0 15px rgba(74, 144, 226, 0.5);
+        }
+
+        /* 暗黑模式下的导航栏适配 */
+        [data-theme="dark"] .navbar {
+            background: rgba(22, 27, 34, 0.95) !important;
+            backdrop-filter: blur(20px);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .page-title {
+                font-size: 2rem;
+            }
+
+            .code-input {
+                height: 300px;
+            }
+
+            .stats-section {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .sample-buttons {
+                justify-content: center;
+            }
+
+            .btn {
+                font-size: 0.8rem;
+                padding: 0.4rem 0.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .page-title {
+                font-size: 1.8rem;
+            }
+
+            .panel-header {
+                padding: 0.8rem 1rem;
+            }
+
+            .panel-title {
+                font-size: 1rem;
+            }
+
+            .stats-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-decoration"></div>
+    
+    <!-- 主题切换按钮 -->
+    <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">
+        <span class="theme-icon sun">☀️</span>
+        <span class="theme-icon moon">🌙</span>
+    </button>
+    
+    <!-- 顶部导航 -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <a href="index.html" class="logo">🤖 Somehow的百宝箱</a>
+                <ul class="nav-links">
+                    <li><a href="index.html">首页</a></li>
+                    <li><a href="#features">功能</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main>
+        <div class="container">
+            <!-- 页面标题 -->
+            <section class="header-section">
+                <h1 class="page-title">⚡ SystemVerilog 语法高亮器</h1>
+                <p class="page-subtitle">
+                    专业的SystemVerilog代码语法高亮工具，支持实时预览、代码统计和多种主题
+                </p>
+            </section>
+
+            <!-- 示例代码 -->
+            <section class="sample-code">
+                <h3>📝 快速开始 - 点击加载示例代码：</h3>
+                <div class="sample-buttons">
+                    <button class="btn btn-outline" onclick="loadSample('module')">模块示例</button>
+                    <button class="btn btn-outline" onclick="loadSample('class')">类示例</button>
+                    <button class="btn btn-outline" onclick="loadSample('interface')">接口示例</button>
+                    <button class="btn btn-outline" onclick="loadSample('testbench')">测试平台</button>
+                </div>
+            </section>
+
+            <!-- 主要工作区域 -->
+            <section class="main-content">
+                <!-- 输入面板 -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">📝 SystemVerilog 代码输入</h2>
+                        <div class="panel-actions">
+                            <select id="themeSelect" class="theme-select">
+                                <option value="prism-tomorrow">Tomorrow Night</option>
+                                <option value="prism">默认主题</option>
+                                <option value="prism-dark">深色主题</option>
+                                <option value="prism-okaidia">Okaidia</option>
+                                <option value="prism-solarizedlight">Solarized Light</option>
+                                <option value="prism-coy">Coy</option>
+                            </select>
+                            <button class="btn btn-outline" onclick="clearInput()">🗑️ 清空</button>
+                            <button class="btn btn-primary" onclick="highlightCode()">✨ 高亮</button>
+                        </div>
+                    </div>
+                    <textarea id="codeInput" class="code-input" placeholder="在这里输入您的SystemVerilog代码...
+
+// 示例代码:
+module counter #(
+    parameter WIDTH = 8
+) (
+    input  logic             clk,
+    input  logic             rst_n,
+    input  logic             enable,
+    output logic [WIDTH-1:0] count
+);
+
+always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n)
+        count <= '0;
+    else if (enable)
+        count <= count + 1;
+end
+
+endmodule"></textarea>
+                </div>
+
+                <!-- 输出面板 -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">🎨 语法高亮结果</h2>
+                        <div class="panel-actions">
+                            <button class="btn btn-outline" onclick="copyHighlighted()">📋 复制</button>
+                            <button class="btn btn-secondary" onclick="downloadCode()">⬇️ 下载</button>
+                        </div>
+                    </div>
+                    <div id="codeOutput" class="code-output">
+                        <pre><code class="language-systemverilog">// 高亮后的代码将在这里显示
+// 请在左侧输入SystemVerilog代码，然后点击"高亮"按钮</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 统计信息 -->
+            <section class="stats-section">
+                <div class="stat-card">
+                    <div class="stat-number" id="lineCount">0</div>
+                    <div class="stat-label">代码行数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="charCount">0</div>
+                    <div class="stat-label">字符数量</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="wordCount">0</div>
+                    <div class="stat-label">单词数量</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="moduleCount">0</div>
+                    <div class="stat-label">模块数量</div>
+                </div>
+            </section>
+
+            <!-- 功能特色 -->
+            <section id="features" class="features-section">
+                <h2>🚀 功能特色</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🎯</div>
+                        <h3 class="feature-title">精准语法识别</h3>
+                        <p class="feature-desc">支持SystemVerilog全部语法特性，包括类、接口、断言等高级特性</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🎨</div>
+                        <h3 class="feature-title">专业主题</h3>
+                        <p class="feature-desc">采用深色主题，护眼舒适，适合长时间代码阅读</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📊</div>
+                        <h3 class="feature-title">代码统计</h3>
+                        <p class="feature-desc">实时统计代码行数、字符数、单词数和模块数量</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📋</div>
+                        <h3 class="feature-title">一键复制</h3>
+                        <p class="feature-desc">支持复制高亮后的HTML代码，方便嵌入文档</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">⬇️</div>
+                        <h3 class="feature-title">文件下载</h3>
+                        <p class="feature-desc">支持将高亮后的代码导出为HTML文件</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📱</div>
+                        <h3 class="feature-title">响应式设计</h3>
+                        <p class="feature-desc">完美适配各种屏幕尺寸，移动端体验优秀</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- 通知组件 -->
+    <div id="notification" class="notification"></div>
+
+    <!-- Prism.js JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/toolbar/prism-toolbar.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js"></script>
+
+    <script src="./dark-mode.js"></script>
+    <script>
+        // 配置Prism.js自动加载器
+        Prism.plugins.autoloader.languages_path = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/';
+        
+        // SystemVerilog语法定义
+        Prism.languages.systemverilog = {
+            'comment': [
+                {
+                    pattern: /(^|[^\\])\/\*[\s\S]*?(?:\*\/|$)/,
+                    lookbehind: true
+                },
+                {
+                    pattern: /(^|[^\\:])\/\/.*/,
+                    lookbehind: true
+                }
+            ],
+            'string': {
+                pattern: /"(?:[^"\\]|\\.)*"/,
+                greedy: true
+            },
+            'keyword': /\b(?:accept_on|alias|always|always_comb|always_ff|always_latch|and|assert|assign|assume|automatic|before|begin|bind|bins|binsof|bit|break|buf|bufif0|bufif1|byte|case|casex|casez|cell|chandle|checker|class|clocking|cmos|config|const|constraint|context|continue|cover|covergroup|coverpoint|cross|deassign|default|defparam|design|disable|dist|do|edge|else|end|endcase|endchecker|endclass|endclocking|endconfig|endfunction|endgenerate|endgroup|endinterface|endmodule|endpackage|endprimitive|endprogram|endproperty|endspecify|endsequence|endtask|enum|event|eventually|expect|export|extends|extern|final|first_match|for|force|foreach|forever|fork|forkjoin|function|generate|genvar|global|highz0|highz1|if|iff|ifnone|ignore_bins|illegal_bins|implements|implies|import|incdir|include|initial|inout|input|inside|instance|int|integer|interconnect|interface|intersect|join|join_any|join_none|large|let|liblist|library|local|localparam|logic|longint|macromodule|matches|medium|modport|module|nand|negedge|nettype|new|nexttime|nmos|nor|noshowcancelled|not|notif0|notif1|null|or|output|package|packed|parameter|pmos|posedge|primitive|priority|program|property|protected|pull0|pull1|pulldown|pullup|pulsestyle_ondetect|pulsestyle_onevent|pure|rand|randc|randcase|randsequence|rcmos|real|realtime|ref|reg|reject_on|release|repeat|restrict|return|rnmos|rpmos|rtran|rtranif0|rtranif1|s_always|s_eventually|s_nexttime|s_until|s_until_with|scalared|sequence|shortint|shortreal|showcancelled|signed|small|soft|solve|specify|specparam|static|string|strong|strong0|strong1|struct|super|supply0|supply1|sync_accept_on|sync_reject_on|table|tagged|task|this|throughout|time|timeprecision|timeunit|tran|tranif0|tranif1|tri|tri0|tri1|triand|trior|trireg|type|typedef|union|unique|unique0|unsigned|until|until_with|untyped|use|uwire|var|vectored|virtual|void|wait|wait_order|wand|weak|weak0|weak1|while|wildcard|wire|with|within|wor|xnor|xor)\b/,
+            'number': /\b(?:\d+(?:\.\d*)?(?:[eE][+-]?\d+)?|\.\d+(?:[eE][+-]?\d+)?|'[sS]?[bBoOdDhH][0-9a-fA-F_xXzZ]+)\b/,
+            'operator': /[+\-*\/%=!<>&|^~?:]+/,
+            'punctuation': /[{}[\];(),]/
+        };
+
+        // 主题切换功能
+        function changeTheme() {
+            const themeSelect = document.getElementById('themeSelect');
+            const themeLink = document.getElementById('prism-theme');
+            const selectedTheme = themeSelect.value;
+            
+            themeLink.href = `https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/${selectedTheme}.min.css`;
+            
+            // 重新高亮代码以应用新主题
+            setTimeout(() => {
+                highlightCode();
+            }, 100);
+            
+            // 保存主题选择到本地存储
+            localStorage.setItem('sv-highlighter-theme', selectedTheme);
+            
+            showNotification(`已切换到 ${themeSelect.options[themeSelect.selectedIndex].text} 主题`, 'success');
+        }
+
+        // 加载保存的主题设置
+        function loadSavedTheme() {
+            const savedTheme = localStorage.getItem('sv-highlighter-theme');
+            if (savedTheme) {
+                const themeSelect = document.getElementById('themeSelect');
+                themeSelect.value = savedTheme;
+                changeTheme();
+            }
+        }
+        const samples = {
+            module: `module counter #(
+    parameter WIDTH = 8
+) (
+    input  logic             clk,
+    input  logic             rst_n,
+    input  logic             enable,
+    output logic [WIDTH-1:0] count
+);
+
+always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n)
+        count <= '0;
+    else if (enable)
+        count <= count + 1;
+end
+
+endmodule`,
+
+            class: `class packet;
+    rand bit [7:0]  header;
+    rand bit [15:0] length;
+    rand bit [7:0]  payload[];
+    bit [15:0]      crc;
+
+    constraint length_c {
+        length inside {[1:1024]};
+        payload.size() == length;
+    }
+
+    function new();
+        header = 8'hAA;
+    endfunction
+
+    function void calc_crc();
+        crc = header ^ length;
+        foreach(payload[i])
+            crc ^= payload[i];
+    endfunction
+
+    function void print();
+        $display("Header: 0x%02h, Length: %0d", header, length);
+    endfunction
+endclass`,
+
+            interface: `interface axi4_if #(
+    parameter DATA_WIDTH = 32,
+    parameter ADDR_WIDTH = 32
+) (
+    input logic clk,
+    input logic rst_n
+);
+
+    // Write Address Channel
+    logic [ADDR_WIDTH-1:0] awaddr;
+    logic [2:0]            awprot;
+    logic                  awvalid;
+    logic                  awready;
+
+    // Write Data Channel
+    logic [DATA_WIDTH-1:0]     wdata;
+    logic [(DATA_WIDTH/8)-1:0] wstrb;
+    logic                      wvalid;
+    logic                      wready;
+
+    // Write Response Channel
+    logic [1:0] bresp;
+    logic       bvalid;
+    logic       bready;
+
+    modport master (
+        output awaddr, awprot, awvalid,
+        input  awready,
+        output wdata, wstrb, wvalid,
+        input  wready,
+        input  bresp, bvalid,
+        output bready
+    );
+
+    modport slave (
+        input  awaddr, awprot, awvalid,
+        output awready,
+        input  wdata, wstrb, wvalid,
+        output wready,
+        output bresp, bvalid,
+        input  bready
+    );
+
+endinterface`,
+
+            testbench: `module tb_counter;
+    parameter CLK_PERIOD = 10;
+    parameter WIDTH = 8;
+
+    logic             clk;
+    logic             rst_n;
+    logic             enable;
+    logic [WIDTH-1:0] count;
+
+    // DUT实例化
+    counter #(.WIDTH(WIDTH)) dut (
+        .clk(clk),
+        .rst_n(rst_n),
+        .enable(enable),
+        .count(count)
+    );
+
+    // 时钟生成
+    initial begin
+        clk = 0;
+        forever #(CLK_PERIOD/2) clk = ~clk;
+    end
+
+    // 测试序列
+    initial begin
+        rst_n = 0;
+        enable = 0;
+        
+        #(CLK_PERIOD*2);
+        rst_n = 1;
+        
+        #(CLK_PERIOD);
+        enable = 1;
+        
+        #(CLK_PERIOD*10);
+        enable = 0;
+        
+        #(CLK_PERIOD*5);
+        $finish;
+    end
+
+    // 监控
+    initial begin
+        $monitor("Time: %0t, rst_n: %b, enable: %b, count: %0d", 
+                 $time, rst_n, enable, count);
+    end
+
+endmodule`
+        };
+
+        function loadSample(type) {
+            const codeInput = document.getElementById('codeInput');
+            if (samples[type]) {
+                codeInput.value = samples[type];
+                highlightCode();
+                updateStats();
+            }
+        }
+
+        function highlightCode() {
+            const input = document.getElementById('codeInput').value;
+            const output = document.getElementById('codeOutput');
+            
+            if (!input.trim()) {
+                output.innerHTML = '<pre><code class="language-systemverilog">// 请在左侧输入SystemVerilog代码</code></pre>';
+                return;
+            }
+
+            output.innerHTML = `<pre class="line-numbers"><code class="language-systemverilog">${escapeHtml(input)}</code></pre>`;
+            Prism.highlightAllUnder(output);
+            updateStats();
+        }
+
+        function clearInput() {
+            document.getElementById('codeInput').value = '';
+            document.getElementById('codeOutput').innerHTML = '<pre><code class="language-systemverilog">// 高亮后的代码将在这里显示</code></pre>';
+            updateStats();
+        }
+
+        function copyHighlighted() {
+            const output = document.getElementById('codeOutput');
+            const htmlContent = output.innerHTML;
+            
+            navigator.clipboard.writeText(htmlContent).then(() => {
+                showNotification('HTML代码已复制到剪贴板！', 'success');
+            }).catch(() => {
+                showNotification('复制失败，请手动选择复制', 'error');
+            });
+        }
+
+        function downloadCode() {
+            const input = document.getElementById('codeInput').value;
+            const output = document.getElementById('codeOutput').innerHTML;
+            
+            if (!input.trim()) {
+                showNotification('请先输入代码！', 'error');
+                return;
+            }
+
+            const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>SystemVerilog Code</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Consolas', 'Monaco', monospace; margin: 20px; }
+        pre { background: #2d2d2d; padding: 20px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    ${output}
+</body>
+</html>`;
+
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'systemverilog_highlighted.html';
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showNotification('文件下载成功！', 'success');
+        }
+
+        function updateStats() {
+            const input = document.getElementById('codeInput').value;
+            const lines = input.split('\n').length;
+            const chars = input.length;
+            const words = input.trim() ? input.trim().split(/\s+/).length : 0;
+            const modules = (input.match(/\bmodule\b/g) || []).length;
+
+            document.getElementById('lineCount').textContent = lines;
+            document.getElementById('charCount').textContent = chars;
+            document.getElementById('wordCount').textContent = words;
+            document.getElementById('moduleCount').textContent = modules;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // 自动更新统计信息
+        document.getElementById('codeInput').addEventListener('input', updateStats);
+
+        // 主题选择事件监听
+        document.getElementById('themeSelect').addEventListener('change', changeTheme);
+
+        // 快捷键支持
+        document.getElementById('codeInput').addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    highlightCode();
+                } else if (e.key === 'k') {
+                    e.preventDefault();
+                    clearInput();
+                }
+            }
+        });
+
+        // 初始化
+        updateStats();
+        
+        // 主题切换功能
+        function toggleTheme() {
+            if (window.darkModeManager) {
+                window.darkModeManager.toggleTheme();
+            }
+        }
+
+        // 页面加载时自动高亮示例代码
+        window.addEventListener('load', function() {
+            loadSavedTheme(); // 加载保存的主题
+            setTimeout(() => {
+                highlightCode();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
