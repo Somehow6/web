@@ -647,7 +647,7 @@
                     <ul class="nav-links">
                         <li><a href="index.html">首页</a></li>
                     </ul>
-                    <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">
+                    <button class="theme-toggle" title="切换主题">
                         <span class="theme-icon sun">☀️</span>
                         <span class="theme-icon moon">🌙</span>
                     </button>
@@ -966,9 +966,7 @@ Markdown 是一种轻量级的标记语言，可以轻松转换为富文本格�
             }, 3000);
         }
 
-        function toggleTheme() {
-            window.darkModeManager.toggleTheme();
-            
+        function switchCodeHighlightTheme() {
             // 切换代码高亮主题
             const lightTheme = document.getElementById('hljs-light');
             const darkTheme = document.getElementById('hljs-dark');
@@ -977,6 +975,11 @@ Markdown 是一种轻量级的标记语言，可以轻松转换为富文本格�
             lightTheme.disabled = isDark;
             darkTheme.disabled = !isDark;
         }
+
+        // 监听主题变化事件
+        document.addEventListener('themeChange', function(e) {
+            switchCodeHighlightTheme();
+        });
 
         // 初始化时切换代码高亮主题
         document.addEventListener('DOMContentLoaded', function() {

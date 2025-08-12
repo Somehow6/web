@@ -19,16 +19,47 @@
             tex: {
                 inlineMath: [['$', '$'], ['\\(', '\\)']],
                 displayMath: [['$$', '$$'], ['\\[', '\\]']],
-                packages: {'[+]': ['ams', 'cancel', 'color', 'physics', 'mhchem', 'siunitx']},
+                packages: {'[+]': ['ams', 'cancel', 'color', 'physics', 'mhchem', 'siunitx', 'array', 'colortbl', 'multirow']},
                 tags: 'ams',
                 processEscapes: true,
                 processEnvironments: true,
+                environments: {
+                    'table': ['array', true, true, 'c'],
+                    'tabular': ['array', true, true, 'c'],
+                    'array': ['array', true, true, 'c'],
+                    'matrix': ['array', true, true, 'c'],
+                    'pmatrix': ['array', true, true, 'c'],
+                    'bmatrix': ['array', true, true, 'c'],
+                    'vmatrix': ['array', true, true, 'c'],
+                    'Vmatrix': ['array', true, true, 'c']
+                },
                 macros: {
                     RR: "\\mathbb{R}",
                     CC: "\\mathbb{C}",
                     NN: "\\mathbb{N}",
                     ZZ: "\\mathbb{Z}",
-                    QQ: "\\mathbb{Q}"
+                    QQ: "\\mathbb{Q}",
+                    // LaTeX 文档命令支持
+                    subsubsection: ["\\section*{#1}", 1],
+                    subsection: ["\\section*{#1}", 1],
+                    section: ["\\section*{#1}", 1],
+                    textit: ["\\textit{#1}", 1],
+                    textbf: ["\\textbf{#1}", 1],
+                    emph: ["\\textit{#1}", 1],
+                    noindent: "",
+                    // 单位和符号
+                    kHz: "\\text{kHz}",
+                    Hz: "\\text{Hz}",
+                    // 图片和图形相关
+                    includegraphics: ["\\text{[图片: #1]}", 1],
+                    figure: "",
+                    caption: ["\\text{图 #1}", 1],
+                    label: ["", 1],
+                    ref: ["\\text{引用}", 1],
+                    // 列表
+                    item: "\\bullet",
+                    begin: ["", 1],
+                    end: ["", 1]
                 }
             },
             svg: {
@@ -578,7 +609,7 @@
                     <ul class="nav-links">
                         <li><a href="index.html">首页</a></li>
                     </ul>
-                    <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">
+                    <button class="theme-toggle" title="切换主题">
                         <span class="theme-icon sun">☀️</span>
                         <span class="theme-icon moon">🌙</span>
                     </button>
@@ -617,8 +648,11 @@
                                 <div class="template-item" onclick="loadTemplate('calculus')">微积分</div>
                                 <div class="template-item" onclick="loadTemplate('geometry')">几何</div>
                                 <div class="template-item" onclick="loadTemplate('matrix')">矩阵</div>
+                                <div class="template-item" onclick="loadTemplate('table')">表格</div>
+                                <div class="template-item" onclick="loadTemplate('figure')">图形图片</div>
                                 <div class="template-item" onclick="loadTemplate('physics')">物理公式</div>
                                 <div class="template-item" onclick="loadTemplate('chemistry')">化学式</div>
+                                <div class="template-item" onclick="loadTemplate('document')">文档格式</div>
                             </div>
                         </div>
                     </div>
@@ -957,7 +991,107 @@ $$\\ce{[H+] = 10^{-pH}}$$
 $$K = \\frac{[\\ce{C}]^c[\\ce{D}]^d}{[\\ce{A}]^a[\\ce{B}]^b}$$
 
 摩尔质量：
-$$M = \\frac{m}{n}$$ （g/mol）`
+$$M = \\frac{m}{n}$$ （g/mol）`,
+
+                figure: `% 图形和图片示例
+
+图形引用示例：
+\\text{如图}~\\ref{fig:comparison}\\text{所示，我们的方法显示出明显优势。}
+
+图片占位符：
+$$\\text{[图片: performance\\_comparison.png]}$$
+$$\\text{图1: 性能对比图}$$
+
+多图布局：
+$$\\begin{array}{cc}
+\\text{[图片: method\\_a.png]} & \\text{[图片: method\\_b.png]} \\\\
+\\text{(a) 传统方法} & \\text{(b) 我们的方法}
+\\end{array}$$
+
+图形标注：
+$$\\text{[图片: system\\_diagram.png]}$$
+$$\\text{图2: 系统架构图，显示了主要组件和数据流向}$$
+
+TikZ 风格图形（文字表示）：
+$$\\begin{array}{c}
+\\text{输入} \\xrightarrow{\\text{处理}} \\text{储备} \\xrightarrow{\\text{读取}} \\text{输出} \\\\
+\\downarrow \\\\
+\\text{反馈（可选）}
+\\end{array}$$
+
+流程图示例：
+$$\\text{数据} \\rightarrow \\text{预处理} \\rightarrow \\text{RC系统} \\rightarrow \\text{后处理} \\rightarrow \\text{结果}$$
+
+\\emph{注意}：在LaTeX预览器中，实际图片会显示为占位符文本。在完整LaTeX环境中，使用 \\texttt{\\includegraphics\{filename\}} 来插入真实图片。`,
+
+                table: `% 表格示例
+
+基础表格：
+$$\\begin{array}{|c|c|c|}
+\\hline
+项目 & 数值 & 单位 \\\\
+\\hline
+频率 & 5 & \\text{kHz} \\\\
+延迟 & 0 & \\text{ms} \\\\
+精度 & 95.2 & \\% \\\\
+\\hline
+\\end{array}$$
+
+比较表格：
+$$\\begin{array}{lcr}
+\\text{方法} & \\text{速度} & \\text{精度} \\\\
+\\hline
+\\text{传统方法} & \\text{慢} & \\text{高} \\\\
+\\text{我们的方法} & \\text{快} & \\text{高} \\\\
+\\text{基线方法} & \\text{中等} & \\text{中等} \\\\
+\\end{array}$$
+
+矩阵表格：
+$$\\begin{pmatrix}
+a_{11} & a_{12} & a_{13} \\\\
+a_{21} & a_{22} & a_{23} \\\\
+a_{31} & a_{32} & a_{33}
+\\end{pmatrix}$$
+
+性能对比：
+$$\\begin{array}{|l|c|c|c|}
+\\hline
+\\textbf{系统} & \\textbf{比特率} & \\textbf{延迟} & \\textbf{反馈} \\\\
+\\hline
+\\text{机械RC} & \\text{数十Hz} & \\text{有} & \\text{需要} \\\\
+\\text{MEMS RC} & \\text{数百Hz} & \\text{无} & \\text{需要} \\\\
+\\text{我们的设备} & \\mathbf{5~kHz} & \\text{无} & \\text{不需要} \\\\
+\\hline
+\\end{array}$$`,
+
+                document: `% LaTeX 文档格式示例
+
+\\subsection{研究背景}
+\\noindent 近年来，\\textbf{物理储备计算}（Physical Reservoir Computing, PRC）系统在机器学习领域展现出巨大潜力。
+
+\\subsection{方法比较}
+\\textit{讨论}：我们的设备实现了5~kHz的比特率，无延迟/掩码且无反馈，这与延迟耦合机械RC（数十Hz）和非延迟MEMS RC（数百Hz）形成鲜明对比。
+
+性能对比如下表：
+$$\\begin{array}{|l|c|c|c|}
+\\hline
+\\textbf{方法} & \\textbf{速度} & \\textbf{复杂度} & \\textbf{性能} \\\\
+\\hline
+\\text{传统RC} & \\text{低} & \\text{高} & \\text{中等} \\\\
+\\text{我们的方法} & \\mathbf{高} & \\text{低} & \\mathbf{优秀} \\\\
+\\hline
+\\end{array}$$
+
+\\subsection{结论}
+虽然我们的基准是奇偶性而非图像或语音识别，但在\\textbf{速度+简洁性}权衡空间中的优势是显而易见的。
+
+关键优势：
+- 高速处理（5~kHz）
+- 无需延迟或掩码
+- 无反馈要求
+- 系统简洁性
+
+\\emph{注}：本示例展示了如何在LaTeX预览器中使用文档格式命令。`
             };
 
             latexEditor.value = templates[type] || '';
@@ -970,8 +1104,11 @@ $$M = \\frac{m}{n}$$ （g/mol）`
                 calculus: '微积分',
                 geometry: '几何',
                 matrix: '矩阵',
+                table: '表格',
+                figure: '图形图片',
                 physics: '物理公式',
-                chemistry: '化学式'
+                chemistry: '化学式',
+                document: '文档格式'
             };
             
             showNotification('已加载' + (typeNames[type] || '') + '示例', 'success');
@@ -1013,17 +1150,18 @@ $$M = \\frac{m}{n}$$ （g/mol）`
             }, 3000);
         }
 
-        function toggleTheme() {
-            if (window.darkModeManager) {
-                window.darkModeManager.toggleTheme();
-            } else {
-                // 备用方法
-                const currentTheme = document.documentElement.getAttribute('data-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                document.documentElement.setAttribute('data-theme', newTheme);
-                localStorage.setItem('theme', newTheme);
+        function updateMathJaxTheme() {
+            // MathJax 主题适配将通过 CSS 自动处理
+            // 如果需要重新渲染数学公式以适应主题变化，可以在这里调用 updatePreview
+            if (latexEditor.value.trim()) {
+                setTimeout(updatePreview, 100);
             }
         }
+
+        // 监听主题变化事件
+        document.addEventListener('themeChange', function(e) {
+            updateMathJaxTheme();
+        });
 
         // 当 MathJax 准备完成时初始化
         document.addEventListener('DOMContentLoaded', function() {

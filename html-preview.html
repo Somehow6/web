@@ -455,7 +455,7 @@
                     <ul class="nav-links">
                         <li><a href="index.html">首页</a></li>
                     </ul>
-                    <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">
+                    <button class="theme-toggle" title="切换主题">
                         <span class="theme-icon sun">☀️</span>
                         <span class="theme-icon moon">🌙</span>
                     </button>
@@ -1107,18 +1107,6 @@
             setTimeout(() => {
                 notification.classList.remove('show');
             }, 3000);
-        }
-
-        function toggleTheme() {
-            if (window.darkModeManager) {
-                window.darkModeManager.toggleTheme();
-            } else {
-                // 备用方法
-                const currentTheme = document.documentElement.getAttribute('data-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                document.documentElement.setAttribute('data-theme', newTheme);
-                localStorage.setItem('theme', newTheme);
-            }
         }
 
         document.addEventListener('DOMContentLoaded', function() {
