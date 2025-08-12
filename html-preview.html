@@ -1110,7 +1110,15 @@
         }
 
         function toggleTheme() {
-            window.darkModeManager.toggleTheme();
+            if (window.darkModeManager) {
+                window.darkModeManager.toggleTheme();
+            } else {
+                // 备用方法
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+            }
         }
 
         document.addEventListener('DOMContentLoaded', function() {

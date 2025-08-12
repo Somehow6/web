@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LaTeX 公式预览器 - Somehow的百宝箱</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+    <link rel="shortcut icon" href="./favicon.png">
+    <meta name="msapplication-TileImage" content="./apple-touch-icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- MathJax Configuration -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                packages: {'[+]': ['ams', 'cancel', 'color', 'physics', 'mhchem', 'siunitx']},
+                tags: 'ams',
+                processEscapes: true,
+                processEnvironments: true
+            },
+            svg: {
+                fontCache: 'global'
+            },
+            options: {
+                renderActions: {
+                    addMenu: [0, '', '']
+                }
+            },
+            startup: {
+                ready: function () {
+                    MathJax.startup.defaultReady();
+                    window.mathJaxReady = true;
+                    if (window.updatePreview) {
+                        window.updatePreview();
+                    }
+                }
+            }
+        };
+    </script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #4A90E2;
+            --primary-hover: #4281CB;
+            --secondary-color: #6C5CE7;
+            --accent-color: #00CDB7;
+            --success-color: #28a745;
+            --warning-color: #FFA726;
+            --danger-color: #e74c3c;
+            --latex-color: #2E8B57;
+            --background-color: #F8FAFD;
+            --container-bg: #FFFFFF;
+            --text-color: #2C3E50;
+            --subtle-text: #7B8794;
+            --border-color: #E1E8ED;
+            --shadow-light: 0 4px 20px rgba(74, 144, 226, 0.08);
+            --shadow-medium: 0 8px 30px rgba(74, 144, 226, 0.12);
+            --shadow-heavy: 0 15px 40px rgba(74, 144, 226, 0.15);
+            --border-radius: 16px;
+            --gradient-primary: linear-gradient(135deg, #4A90E2 0%, #6C5CE7 100%);
+            --gradient-accent: linear-gradient(135deg, #00CDB7 0%, #4A90E2 100%);
+            --gradient-latex: linear-gradient(135deg, #2E8B57 0%, #4A90E2 100%);
+            --code-bg: #f8f9fa;
+            --code-border: #e9ecef;
+            --latex-bg: #fefefe;
+        }
+
+        [data-theme="dark"] {
+            --background-color: #0D1117;
+            --container-bg: #161B22;
+            --text-color: #F0F6FC;
+            --subtle-text: #7D8590;
+            --border-color: #30363D;
+            --shadow-light: 0 4px 20px rgba(0, 0, 0, 0.3);
+            --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.4);
+            --shadow-heavy: 0 15px 40px rgba(0, 0, 0, 0.5);
+            --code-bg: #21262d;
+            --code-border: #30363d;
+            --latex-bg: #161B22;
+        }
+
+        [data-theme="dark"] .navbar {
+            background: rgba(22, 27, 34, 0.95) !important;
+            backdrop-filter: blur(20px);
+        }
+
+        *, *::before, *::after { 
+            box-sizing: border-box; 
+        }
+
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .bg-decoration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.03;
+            background: 
+                radial-gradient(circle at 20% 80%, var(--latex-color) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, var(--secondary-color) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, var(--accent-color) 0%, transparent 50%);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--gradient-latex);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-links a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+
+        .theme-toggle {
+            background: var(--container-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-left: 1rem;
+            box-shadow: var(--shadow-light);
+            position: relative;
+        }
+
+        .theme-toggle:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+            transform: scale(1.1);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .theme-icon {
+            font-size: 1.3rem;
+            transition: all 0.3s ease;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .theme-icon.sun {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) rotate(0deg) scale(1);
+        }
+
+        .theme-icon.moon {
+            opacity: 0;
+            visibility: hidden;
+            transform: translate(-50%, -50%) rotate(180deg) scale(0.5);
+        }
+
+        [data-theme="dark"] .theme-icon.sun {
+            opacity: 0;
+            visibility: hidden;
+            transform: translate(-50%, -50%) rotate(-180deg) scale(0.5);
+        }
+
+        [data-theme="dark"] .theme-icon.moon {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) rotate(0deg) scale(1);
+        }
+
+        [data-theme="dark"] .theme-toggle {
+            background: var(--container-bg);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 10px rgba(74, 144, 226, 0.3);
+        }
+
+        [data-theme="dark"] .theme-toggle:hover {
+            background: var(--primary-color);
+            box-shadow: 0 0 15px rgba(74, 144, 226, 0.5);
+        }
+
+        .page-header {
+            text-align: center;
+            padding: 2rem 0;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin: 0 0 0.5rem 0;
+            background: var(--gradient-latex);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-subtitle {
+            color: var(--subtle-text);
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin: 2rem 0;
+            height: calc(100vh - 250px);
+            min-height: 600px;
+        }
+
+        .editor-section, .preview-section {
+            background: var(--container-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-light);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--code-bg);
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: var(--gradient-latex);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(46, 139, 87, 0.25);
+        }
+
+        .btn-secondary {
+            background: var(--container-bg);
+            color: var(--text-color);
+            border: 2px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.25);
+        }
+
+        .latex-editor {
+            flex: 1;
+            padding: 0;
+            margin: 0;
+            border: none;
+            background: var(--container-bg);
+            color: var(--text-color);
+            font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            padding: 1.5rem;
+        }
+
+        .preview-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            background: var(--latex-bg);
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        .controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .example-templates {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: var(--shadow-medium);
+            padding: 1rem;
+            min-width: 200px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .example-templates.show {
+            display: block;
+        }
+
+        .template-item {
+            padding: 0.5rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.2s ease;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .template-item:hover {
+            background: var(--code-bg);
+        }
+
+        .template-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .loading-indicator {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--subtle-text);
+            font-size: 0.9rem;
+        }
+
+        .loading-indicator.show {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border-color);
+            border-top: 2px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            color: var(--danger-color);
+            background: rgba(231, 76, 60, 0.1);
+            border: 1px solid var(--danger-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        .latex-tip {
+            background: var(--code-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            color: var(--subtle-text);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            .main-content {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .page-title {
+                font-size: 2rem;
+            }
+
+            .nav-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-content > div {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                gap: 1rem;
+                margin: 0;
+            }
+
+            .theme-toggle {
+                margin-left: 0;
+            }
+
+            .section-header {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: flex-start;
+            }
+
+            .controls {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+
+        [data-theme="dark"] .latex-editor {
+            background: var(--container-bg);
+            color: var(--text-color);
+        }
+
+        [data-theme="dark"] .preview-content {
+            background: var(--latex-bg);
+            color: var(--text-color);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            box-shadow: var(--shadow-medium);
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            border-left: 4px solid var(--success-color);
+        }
+
+        .notification.error {
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .notification.warning {
+            border-left: 4px solid var(--warning-color);
+        }
+
+        /* MathJax 暗黑模式适配 */
+        [data-theme="dark"] .MathJax {
+            color: var(--text-color) !important;
+        }
+
+        [data-theme="dark"] .MathJax svg {
+            filter: invert(1) hue-rotate(180deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-decoration"></div>
+    
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <div class="logo">📐 Somehow的百宝箱</div>
+                <div style="display: flex; align-items: center;">
+                    <ul class="nav-links">
+                        <li><a href="index.html">首页</a></li>
+                    </ul>
+                    <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">
+                        <span class="theme-icon sun">☀️</span>
+                        <span class="theme-icon moon">🌙</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+            <section class="page-header">
+                <h1 class="page-title">LaTeX 公式预览器</h1>
+                <p class="page-subtitle">输入 LaTeX 公式代码，实时渲染数学公式和符号</p>
+            </section>
+
+            <div class="main-content">
+                <div class="editor-section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            📝 LaTeX 编辑器
+                        </h2>
+                        <div class="controls" style="position: relative;">
+                            <div class="loading-indicator" id="loadingIndicator">
+                                <div class="loading-spinner"></div>
+                                <span>渲染中...</span>
+                            </div>
+                            <button class="btn btn-secondary" onclick="clearEditor()">
+                                🗑️ 清空
+                            </button>
+                            <button class="btn btn-primary" onclick="toggleExamples()" id="examplesBtn">
+                                💡 示例
+                            </button>
+                            <div class="example-templates" id="exampleTemplates">
+                                <div class="template-item" onclick="loadTemplate('basic')">基础公式</div>
+                                <div class="template-item" onclick="loadTemplate('algebra')">代数</div>
+                                <div class="template-item" onclick="loadTemplate('calculus')">微积分</div>
+                                <div class="template-item" onclick="loadTemplate('geometry')">几何</div>
+                                <div class="template-item" onclick="loadTemplate('matrix')">矩阵</div>
+                                <div class="template-item" onclick="loadTemplate('physics')">物理公式</div>
+                                <div class="template-item" onclick="loadTemplate('chemistry')">化学式</div>
+                            </div>
+                        </div>
+                    </div>
+                    <textarea 
+                        id="latexEditor" 
+                        class="latex-editor" 
+                        placeholder="在这里输入您的 LaTeX 公式代码...
+
+例如：
+$$ E = mc^2 $$
+
+$$ \int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi} $$
+
+$$ \sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6} $$
+
+行内公式：$a^2 + b^2 = c^2$
+
+分数：$\frac{x + y}{2}$
+
+极限：$\lim_{x \to \infty} \frac{1}{x} = 0$"
+                        spellcheck="false"
+                    ></textarea>
+                </div>
+
+                <div class="preview-section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            👁️ 公式预览
+                        </h2>
+                        <div class="controls">
+                            <button class="btn btn-secondary" onclick="refreshPreview()">
+                                🔄 刷新
+                            </button>
+                            <button class="btn btn-success" onclick="copyLatex()">
+                                📋 复制 LaTeX
+                            </button>
+                        </div>
+                    </div>
+                    <div id="previewContent" class="preview-content">
+                        <div class="latex-tip">
+                            <strong>💡 使用提示：</strong><br>
+                            • 使用 <code>$...$</code> 或 <code>\(...\)</code> 包围行内公式<br>
+                            • 使用 <code>$$...$$</code> 或 <code>\[...\]</code> 包围独立公式<br>
+                            • 支持 AMS 数学扩展包、物理学包、化学式等<br>
+                            • 在左侧输入 LaTeX 代码，右侧将实时显示渲染结果
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="notification" class="notification"></div>
+
+    <script src="./dark-mode.js"></script>
+    <script>
+        const latexEditor = document.getElementById('latexEditor');
+        const previewContent = document.getElementById('previewContent');
+        const exampleTemplates = document.getElementById('exampleTemplates');
+        const notification = document.getElementById('notification');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+
+        let updateTimeout;
+        let mathJaxReady = false;
+
+        latexEditor.addEventListener('input', function() {
+            clearTimeout(updateTimeout);
+            updateTimeout = setTimeout(updatePreview, 800);
+        });
+
+        function updatePreview() {
+            const latexContent = latexEditor.value.trim();
+            
+            if (!latexContent) {
+                previewContent.innerHTML = `
+                    <div class="latex-tip">
+                        <strong>💡 使用提示：</strong><br>
+                        • 使用 <code>$...$</code> 或 <code>\\(...\\)</code> 包围行内公式<br>
+                        • 使用 <code>$$...$$</code> 或 <code>\\[...\\]</code> 包围独立公式<br>
+                        • 支持 AMS 数学扩展包、物理学包、化学式等<br>
+                        • 在左侧输入 LaTeX 代码，右侧将实时显示渲染结果
+                    </div>
+                `;
+                return;
+            }
+
+            if (!window.MathJax) {
+                previewContent.innerHTML = '<div class="error-message">MathJax 正在加载中，请稍候...</div>';
+                return;
+            }
+
+            showLoading();
+            
+            try {
+                previewContent.innerHTML = latexContent;
+                
+                MathJax.typesetPromise([previewContent])
+                    .then(() => {
+                        hideLoading();
+                    })
+                    .catch((error) => {
+                        hideLoading();
+                        console.error('MathJax rendering error:', error);
+                        previewContent.innerHTML = `
+                            <div class="error-message">
+                                <strong>渲染错误:</strong><br>
+                                ${error.message || '未知错误，请检查 LaTeX 语法'}
+                            </div>
+                            <div class="latex-tip">
+                                <strong>常见错误：</strong><br>
+                                • 检查括号是否匹配<br>
+                                • 确保命令拼写正确<br>
+                                • 特殊字符需要转义（如 \\$, \\&, \\#）
+                            </div>
+                        `;
+                    });
+            } catch (error) {
+                hideLoading();
+                console.error('Preview error:', error);
+                previewContent.innerHTML = `
+                    <div class="error-message">
+                        <strong>预览错误:</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function showLoading() {
+            loadingIndicator.classList.add('show');
+        }
+
+        function hideLoading() {
+            loadingIndicator.classList.remove('show');
+        }
+
+        function clearEditor() {
+            latexEditor.value = '';
+            updatePreview();
+            showNotification('编辑器已清空', 'success');
+        }
+
+        function refreshPreview() {
+            updatePreview();
+            showNotification('预览已刷新', 'success');
+        }
+
+        function toggleExamples() {
+            exampleTemplates.classList.toggle('show');
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.controls')) {
+                exampleTemplates.classList.remove('show');
+            }
+        });
+
+        function loadTemplate(type) {
+            const templates = {
+                basic: `% 基础数学公式示例
+
+行内公式：爱因斯坦质能方程 $E = mc^2$
+
+独立公式：
+$$E = mc^2$$
+
+分数：$\\frac{a}{b}$ 和 $\\frac{x^2 + y^2}{z}$
+
+上下标：$x^2$, $x_1$, $x^{n+1}$, $x_{i,j}$
+
+根号：$\\sqrt{2}$, $\\sqrt[3]{8}$, $\\sqrt{x^2 + y^2}$
+
+极限：$\\lim_{x \\to \\infty} \\frac{1}{x} = 0$
+
+求和：$\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}$
+
+积分：$\\int_0^1 x dx = \\frac{1}{2}$`,
+
+                algebra: `% 代数公式
+
+二次公式：
+$$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$
+
+因式分解：
+$$a^2 - b^2 = (a+b)(a-b)$$
+
+完全平方：
+$$(a \\pm b)^2 = a^2 \\pm 2ab + b^2$$
+
+二项式定理：
+$$(a+b)^n = \\sum_{k=0}^{n} \\binom{n}{k} a^{n-k} b^k$$
+
+对数性质：
+$$\\log_a(xy) = \\log_a x + \\log_a y$$
+
+指数定律：
+$$a^m \\cdot a^n = a^{m+n}$$`,
+
+                calculus: `% 微积分公式
+
+导数定义：
+$$f'(x) = \\lim_{h \\to 0} \\frac{f(x+h) - f(x)}{h}$$
+
+常用导数：
+$$\\frac{d}{dx}[x^n] = nx^{n-1}$$
+$$\\frac{d}{dx}[\\sin x] = \\cos x$$
+$$\\frac{d}{dx}[\\cos x] = -\\sin x$$
+
+积分：
+$$\\int x^n dx = \\frac{x^{n+1}}{n+1} + C$$
+
+定积分：
+$$\\int_a^b f(x) dx = F(b) - F(a)$$
+
+高斯积分：
+$$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$
+
+泰勒级数：
+$$f(x) = \\sum_{n=0}^{\\infty} \\frac{f^{(n)}(a)}{n!}(x-a)^n$$`,
+
+                geometry: `% 几何公式
+
+勾股定理：
+$$a^2 + b^2 = c^2$$
+
+圆的面积和周长：
+$$A = \\pi r^2$$
+$$C = 2\\pi r$$
+
+球的体积和表面积：
+$$V = \\frac{4}{3}\\pi r^3$$
+$$A = 4\\pi r^2$$
+
+三角恒等式：
+$$\\sin^2 \\theta + \\cos^2 \\theta = 1$$
+$$\\sin(a \\pm b) = \\sin a \\cos b \\pm \\cos a \\sin b$$
+
+欧拉公式：
+$$e^{i\\theta} = \\cos \\theta + i\\sin \\theta$$
+
+距离公式：
+$$d = \\sqrt{(x_2-x_1)^2 + (y_2-y_1)^2}$$`,
+
+                matrix: `% 矩阵运算
+
+矩阵表示：
+$$A = \\begin{pmatrix}
+a & b \\\\
+c & d
+\\end{pmatrix}$$
+
+行列式：
+$$\\det(A) = \\begin{vmatrix}
+a & b \\\\
+c & d
+\\end{vmatrix} = ad - bc$$
+
+矩阵乘法：
+$$AB = \\begin{pmatrix}
+a & b \\\\
+c & d
+\\end{pmatrix}
+\\begin{pmatrix}
+e & f \\\\
+g & h
+\\end{pmatrix}$$
+
+单位矩阵：
+$$I = \\begin{pmatrix}
+1 & 0 & 0 \\\\
+0 & 1 & 0 \\\\
+0 & 0 & 1
+\\end{pmatrix}$$
+
+向量表示：
+$$\\vec{v} = \\begin{bmatrix} x \\\\ y \\\\ z \\end{bmatrix}$$
+
+点积：
+$$\\vec{a} \\cdot \\vec{b} = |\\vec{a}||\\vec{b}|\\cos\\theta$$`,
+
+                physics: `% 物理公式
+
+牛顿第二定律：
+$$F = ma$$
+
+动能：
+$$KE = \\frac{1}{2}mv^2$$
+
+势能：
+$$PE = mgh$$
+
+库仑定律：
+$$F = k\\frac{q_1 q_2}{r^2}$$
+
+薛定谔方程：
+$$i\\hbar\\frac{\\partial}{\\partial t}|\\psi\\rangle = \\hat{H}|\\psi\\rangle$$
+
+麦克斯韦方程：
+$$\\nabla \\cdot \\mathbf{E} = \\frac{\\rho}{\\epsilon_0}$$
+$$\\nabla \\times \\mathbf{B} = \\mu_0\\mathbf{J} + \\mu_0\\epsilon_0\\frac{\\partial \\mathbf{E}}{\\partial t}$$
+
+波动方程：
+$$\\frac{\\partial^2 u}{\\partial t^2} = c^2 \\nabla^2 u$$`,
+
+                chemistry: `% 化学式示例
+
+分子式：
+$$\\ce{H2O}$$ （水）
+$$\\ce{CO2}$$ （二氧化碳）
+$$\\ce{C6H12O6}$$ （葡萄糖）
+
+化学反应：
+$$\\ce{2H2 + O2 -> 2H2O}$$
+$$\\ce{CH4 + 2O2 -> CO2 + 2H2O}$$
+
+离子方程：
+$$\\ce{H+ + OH- -> H2O}$$
+$$\\ce{Ag+ + Cl- -> AgCl v}$$
+
+浓度表示：
+$$\\ce{[H+] = 10^{-pH}}$$
+
+平衡常数：
+$$K = \\frac{[\\ce{C}]^c[\\ce{D}]^d}{[\\ce{A}]^a[\\ce{B}]^b}$$
+
+摩尔质量：
+$$M = \\frac{m}{n}$$ （g/mol）`
+            };
+
+            latexEditor.value = templates[type] || '';
+            updatePreview();
+            exampleTemplates.classList.remove('show');
+            
+            const typeNames = {
+                basic: '基础公式',
+                algebra: '代数',
+                calculus: '微积分',
+                geometry: '几何',
+                matrix: '矩阵',
+                physics: '物理公式',
+                chemistry: '化学式'
+            };
+            
+            showNotification('已加载' + (typeNames[type] || '') + '示例', 'success');
+        }
+
+        async function copyLatex() {
+            const latexContent = latexEditor.value.trim();
+            if (!latexContent) {
+                showNotification('没有内容可以复制', 'warning');
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(latexContent);
+                showNotification('LaTeX 代码已复制到剪贴板', 'success');
+            } catch (err) {
+                // 降级方案
+                const textArea = document.createElement('textarea');
+                textArea.value = latexContent;
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showNotification('LaTeX 代码已复制到剪贴板', 'success');
+                } catch (err) {
+                    showNotification('复制失败，请手动选择复制', 'error');
+                }
+                document.body.removeChild(textArea);
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            notification.textContent = message;
+            notification.className = 'notification ' + type + ' show';
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        function toggleTheme() {
+            if (window.darkModeManager) {
+                window.darkModeManager.toggleTheme();
+            } else {
+                // 备用方法
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+            }
+        }
+
+        // 当 MathJax 准备完成时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            updatePreview();
+        });
+
+        // 监听 MathJax 加载完成
+        window.addEventListener('load', function() {
+            if (window.MathJax) {
+                mathJaxReady = true;
+                updatePreview();
+            }
+        });
+    </script>
+</body>
+</html>
