@@ -22,10 +22,19 @@
                 packages: {'[+]': ['ams', 'cancel', 'color', 'physics', 'mhchem', 'siunitx']},
                 tags: 'ams',
                 processEscapes: true,
-                processEnvironments: true
+                processEnvironments: true,
+                macros: {
+                    RR: "\\mathbb{R}",
+                    CC: "\\mathbb{C}",
+                    NN: "\\mathbb{N}",
+                    ZZ: "\\mathbb{Z}",
+                    QQ: "\\mathbb{Q}"
+                }
             },
             svg: {
-                fontCache: 'global'
+                fontCache: 'global',
+                displayAlign: 'center',
+                displayIndent: '0'
             },
             options: {
                 renderActions: {
@@ -36,9 +45,18 @@
                 ready: function () {
                     MathJax.startup.defaultReady();
                     window.mathJaxReady = true;
+                    console.log('MathJax is ready');
                     if (window.updatePreview) {
-                        window.updatePreview();
+                        setTimeout(window.updatePreview, 100);
                     }
+                },
+                pageReady: function () {
+                    return MathJax.startup.defaultPageReady().then(() => {
+                        console.log('MathJax page ready');
+                        if (window.updatePreview) {
+                            setTimeout(window.updatePreview, 100);
+                        }
+                    });
                 }
             }
         };
@@ -695,28 +713,40 @@ $$ \sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6} $$
             showLoading();
             
             try {
-                previewContent.innerHTML = latexContent;
+                // 清空之前的内容
+                previewContent.innerHTML = '';
                 
-                MathJax.typesetPromise([previewContent])
-                    .then(() => {
-                        hideLoading();
-                    })
-                    .catch((error) => {
-                        hideLoading();
-                        console.error('MathJax rendering error:', error);
-                        previewContent.innerHTML = `
-                            <div class="error-message">
-                                <strong>渲染错误:</strong><br>
-                                ${error.message || '未知错误，请检查 LaTeX 语法'}
-                            </div>
-                            <div class="latex-tip">
-                                <strong>常见错误：</strong><br>
-                                • 检查括号是否匹配<br>
-                                • 确保命令拼写正确<br>
-                                • 特殊字符需要转义（如 \\$, \\&, \\#）
-                            </div>
-                        `;
-                    });
+                // 创建新的容器元素
+                const contentWrapper = document.createElement('div');
+                contentWrapper.innerHTML = latexContent;
+                previewContent.appendChild(contentWrapper);
+                
+                // 使用 MathJax 重新处理
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    MathJax.typesetPromise([contentWrapper])
+                        .then(() => {
+                            hideLoading();
+                        })
+                        .catch((error) => {
+                            hideLoading();
+                            console.error('MathJax rendering error:', error);
+                            previewContent.innerHTML = `
+                                <div class="error-message">
+                                    <strong>渲染错误:</strong><br>
+                                    ${error.message || '未知错误，请检查 LaTeX 语法'}
+                                </div>
+                                <div class="latex-tip">
+                                    <strong>常见错误：</strong><br>
+                                    • 检查括号是否匹配<br>
+                                    • 确保命令拼写正确<br>
+                                    • 特殊字符需要转义（如 \\$, \\&, \\#）
+                                </div>
+                            `;
+                        });
+                } else {
+                    hideLoading();
+                    previewContent.innerHTML = '<div class="error-message">MathJax 未正确加载</div>';
+                }
             } catch (error) {
                 hideLoading();
                 console.error('Preview error:', error);
@@ -997,6 +1027,8 @@ $$M = \\frac{m}{n}$$ （g/mol）`
 
         // 当 MathJax 准备完成时初始化
         document.addEventListener('DOMContentLoaded', function() {
+            // 将 updatePreview 函数设为全局
+            window.updatePreview = updatePreview;
             updatePreview();
         });
 
@@ -1005,6 +1037,16 @@ $$M = \\frac{m}{n}$$ （g/mol）`
             if (window.MathJax) {
                 mathJaxReady = true;
                 updatePreview();
+            }
+        });
+
+        // 错误处理
+        window.addEventListener('error', function(e) {
+            if (e.message && e.message.includes('MathJax')) {
+                console.error('MathJax error:', e);
+                if (previewContent) {
+                    previewContent.innerHTML = '<div class="error-message">MathJax 加载失败，请刷新页面重试</div>';
+                }
             }
         });
     </script>
