@@ -1097,12 +1097,12 @@
             htmlEditor.value = templates[type];
             updatePreview();
             exampleTemplates.classList.remove('show');
-            showNotification(`已加载${type === 'basic' ? '基础页面' : type === 'animation' ? 'CSS 动画' : type === 'interactive' ? '交互效果' : type === 'card' ? '卡片布局' : '表单样式'}示例`, 'success');
+            showNotification('已加载' + (type === 'basic' ? '基础页面' : type === 'animation' ? 'CSS 动画' : type === 'interactive' ? '交互效果' : type === 'card' ? '卡片布局' : '表单样式') + '示例', 'success');
         }
 
         function showNotification(message, type = 'info') {
             notification.textContent = message;
-            notification.className = `notification ${type} show`;
+            notification.className = 'notification ' + type + ' show';
             
             setTimeout(() => {
                 notification.classList.remove('show');
