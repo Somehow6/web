@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown 转富文本 - Somehow的百宝箱</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+    <link rel="shortcut icon" href="./favicon.png">
+    <meta name="msapplication-TileImage" content="./apple-touch-icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github.min.css" id="hljs-light">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css" id="hljs-dark" disabled>
+    
+    <style>
+        :root {
+            --primary-color: #4A90E2;
+            --primary-hover: #4281CB;
+            --secondary-color: #6C5CE7;
+            --accent-color: #00CDB7;
+            --success-color: #28a745;
+            --warning-color: #FFA726;
+            --danger-color: #e74c3c;
+            --background-color: #F8FAFD;
+            --container-bg: #FFFFFF;
+            --text-color: #2C3E50;
+            --subtle-text: #7B8794;
+            --border-color: #E1E8ED;
+            --shadow-light: 0 4px 20px rgba(74, 144, 226, 0.08);
+            --shadow-medium: 0 8px 30px rgba(74, 144, 226, 0.12);
+            --shadow-heavy: 0 15px 40px rgba(74, 144, 226, 0.15);
+            --border-radius: 16px;
+            --gradient-primary: linear-gradient(135deg, #4A90E2 0%, #6C5CE7 100%);
+            --gradient-accent: linear-gradient(135deg, #00CDB7 0%, #4A90E2 100%);
+            --code-bg: #f8f9fa;
+            --code-border: #e9ecef;
+        }
+
+        [data-theme="dark"] {
+            --background-color: #0D1117;
+            --container-bg: #161B22;
+            --text-color: #F0F6FC;
+            --subtle-text: #7D8590;
+            --border-color: #30363D;
+            --shadow-light: 0 4px 20px rgba(0, 0, 0, 0.3);
+            --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.4);
+            --shadow-heavy: 0 15px 40px rgba(0, 0, 0, 0.5);
+            --code-bg: #21262d;
+            --code-border: #30363d;
+        }
+
+        [data-theme="dark"] .navbar {
+            background: rgba(22, 27, 34, 0.95) !important;
+            backdrop-filter: blur(20px);
+        }
+
+        *, *::before, *::after { 
+            box-sizing: border-box; 
+        }
+
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .bg-decoration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.03;
+            background: 
+                radial-gradient(circle at 20% 80%, var(--primary-color) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, var(--secondary-color) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, var(--accent-color) 0%, transparent 50%);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-links a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+
+        .theme-toggle {
+            background: var(--container-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-left: 1rem;
+            box-shadow: var(--shadow-light);
+            position: relative;
+        }
+
+        .theme-toggle:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+            transform: scale(1.1);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .theme-icon {
+            font-size: 1.3rem;
+            transition: all 0.3s ease;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .theme-icon.sun {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) rotate(0deg) scale(1);
+        }
+
+        .theme-icon.moon {
+            opacity: 0;
+            visibility: hidden;
+            transform: translate(-50%, -50%) rotate(180deg) scale(0.5);
+        }
+
+        [data-theme="dark"] .theme-icon.sun {
+            opacity: 0;
+            visibility: hidden;
+            transform: translate(-50%, -50%) rotate(-180deg) scale(0.5);
+        }
+
+        [data-theme="dark"] .theme-icon.moon {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) rotate(0deg) scale(1);
+        }
+
+        [data-theme="dark"] .theme-toggle {
+            background: var(--container-bg);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 10px rgba(74, 144, 226, 0.3);
+        }
+
+        [data-theme="dark"] .theme-toggle:hover {
+            background: var(--primary-color);
+            box-shadow: 0 0 15px rgba(74, 144, 226, 0.5);
+        }
+
+        .page-header {
+            text-align: center;
+            padding: 2rem 0;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin: 0 0 0.5rem 0;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-subtitle {
+            color: var(--subtle-text);
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin: 2rem 0;
+            height: calc(100vh - 250px);
+            min-height: 600px;
+        }
+
+        .editor-section, .preview-section {
+            background: var(--container-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-light);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--code-bg);
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(74, 144, 226, 0.25);
+        }
+
+        .btn-secondary {
+            background: var(--container-bg);
+            color: var(--text-color);
+            border: 2px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.25);
+        }
+
+        .markdown-editor {
+            flex: 1;
+            padding: 0;
+            margin: 0;
+            border: none;
+            background: var(--container-bg);
+            color: var(--text-color);
+            font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            padding: 1.5rem;
+        }
+
+        .preview-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            background: var(--container-bg);
+        }
+
+        .controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .style-selector {
+            position: relative;
+        }
+
+        .style-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: var(--shadow-medium);
+            padding: 0.5rem;
+            min-width: 150px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .style-dropdown.show {
+            display: block;
+        }
+
+        .style-option {
+            padding: 0.5rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.2s ease;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+        }
+
+        .style-option:hover {
+            background: var(--code-bg);
+        }
+
+        .style-option:last-child {
+            margin-bottom: 0;
+        }
+
+        .style-option.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Markdown 样式 */
+        .markdown-body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+        }
+
+        .markdown-body h1,
+        .markdown-body h2,
+        .markdown-body h3,
+        .markdown-body h4,
+        .markdown-body h5,
+        .markdown-body h6 {
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            font-weight: 600;
+            line-height: 1.25;
+        }
+
+        .markdown-body h1 { font-size: 2em; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; }
+        .markdown-body h2 { font-size: 1.5em; }
+        .markdown-body h3 { font-size: 1.25em; }
+        .markdown-body h4 { font-size: 1em; }
+        .markdown-body h5 { font-size: 0.875em; }
+        .markdown-body h6 { font-size: 0.85em; color: var(--subtle-text); }
+
+        .markdown-body p {
+            margin-bottom: 1em;
+        }
+
+        .markdown-body a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .markdown-body a:hover {
+            text-decoration: underline;
+        }
+
+        .markdown-body ul, .markdown-body ol {
+            margin-bottom: 1em;
+            padding-left: 1.5em;
+        }
+
+        .markdown-body li {
+            margin-bottom: 0.25em;
+        }
+
+        .markdown-body blockquote {
+            margin: 1em 0;
+            padding: 0 1em;
+            color: var(--subtle-text);
+            border-left: 4px solid var(--border-color);
+            background: var(--code-bg);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .markdown-body pre {
+            background: var(--code-bg);
+            padding: 1em;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+        }
+
+        .markdown-body code {
+            background: var(--code-bg);
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .markdown-body pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .markdown-body table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1em 0;
+        }
+
+        .markdown-body th,
+        .markdown-body td {
+            border: 1px solid var(--border-color);
+            padding: 0.75em;
+            text-align: left;
+        }
+
+        .markdown-body th {
+            background: var(--code-bg);
+            font-weight: 600;
+        }
+
+        .markdown-body img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .markdown-body hr {
+            border: none;
+            border-top: 2px solid var(--border-color);
+            margin: 2em 0;
+        }
+
+        /* GitHub 风格样式 */
+        .style-github h1, .style-github h2 { 
+            color: #24292e; 
+            border-bottom: 1px solid #eaecef;
+            padding-bottom: 0.3em;
+        }
+        [data-theme="dark"] .style-github h1, 
+        [data-theme="dark"] .style-github h2 { 
+            color: #f0f6fc; 
+            border-bottom-color: #30363d;
+        }
+
+        /* 简洁风格样式 */
+        .style-minimal {
+            font-family: 'Georgia', serif;
+            line-height: 1.8;
+        }
+        .style-minimal h1, .style-minimal h2, .style-minimal h3 {
+            font-weight: 300;
+            color: var(--primary-color);
+        }
+
+        /* 商务风格样式 */
+        .style-business {
+            font-family: 'Arial', sans-serif;
+        }
+        .style-business h1, .style-business h2 {
+            color: #2c3e50;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 1rem;
+            background: var(--code-bg);
+            padding: 0.5rem 1rem;
+            margin: 1.5em 0 0.5em;
+        }
+        [data-theme="dark"] .style-business h1,
+        [data-theme="dark"] .style-business h2 {
+            color: var(--text-color);
+        }
+
+        /* 创意风格样式 */
+        .style-creative {
+            font-family: 'Helvetica Neue', sans-serif;
+        }
+        .style-creative h1 {
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2.5em;
+        }
+        .style-creative h2 {
+            color: var(--secondary-color);
+            position: relative;
+        }
+        .style-creative h2::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: var(--accent-color);
+            border-radius: 2px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            .main-content {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .page-title {
+                font-size: 2rem;
+            }
+
+            .nav-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-content > div {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                gap: 1rem;
+                margin: 0;
+            }
+
+            .theme-toggle {
+                margin-left: 0;
+            }
+
+            .section-header {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: flex-start;
+            }
+
+            .controls {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+
+        [data-theme="dark"] .markdown-editor {
+            background: var(--container-bg);
+            color: var(--text-color);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            box-shadow: var(--shadow-medium);
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            border-left: 4px solid var(--success-color);
+        }
+
+        .notification.error {
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .notification.warning {
+            border-left: 4px solid var(--warning-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-decoration"></div>
+    
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <div class="logo">📄 Somehow的百宝箱</div>
+                <div style="display: flex; align-items: center;">
+                    <ul class="nav-links">
+                        <li><a href="index.html">首页</a></li>
+                    </ul>
+                    <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">
+                        <span class="theme-icon sun">☀️</span>
+                        <span class="theme-icon moon">🌙</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+            <section class="page-header">
+                <h1 class="page-title">Markdown 转富文本</h1>
+                <p class="page-subtitle">输入 Markdown 代码，转换为精美的富文本格式，支持多种样式风格</p>
+            </section>
+
+            <div class="main-content">
+                <div class="editor-section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            📝 Markdown 编辑器
+                        </h2>
+                        <div class="controls">
+                            <button class="btn btn-secondary" onclick="clearEditor()">
+                                🗑️ 清空
+                            </button>
+                            <button class="btn btn-primary" onclick="loadExample()">
+                                💡 示例
+                            </button>
+                        </div>
+                    </div>
+                    <textarea 
+                        id="markdownEditor" 
+                        class="markdown-editor" 
+                        placeholder="在这里输入您的 Markdown 代码...
+
+# 标题示例
+## 二级标题
+
+**粗体文本** 和 *斜体文本*
+
+- 列表项 1
+- 列表项 2
+- 列表项 3
+
+> 这是一个引用块
+
+\`\`\`javascript
+console.log('Hello World!');
+\`\`\`
+
+[链接文本](https://example.com)
+
+| 表格 | 示例 |
+|------|------|
+| 单元格1 | 单元格2 |
+| 单元格3 | 单元格4 |"
+                        spellcheck="false"
+                    ></textarea>
+                </div>
+
+                <div class="preview-section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            👁️ 富文本预览
+                        </h2>
+                        <div class="controls">
+                            <div class="style-selector">
+                                <button class="btn btn-secondary" onclick="toggleStyleDropdown()" id="styleBtn">
+                                    🎨 默认风格
+                                </button>
+                                <div class="style-dropdown" id="styleDropdown">
+                                    <div class="style-option active" onclick="changeStyle('default', '默认风格')">默认风格</div>
+                                    <div class="style-option" onclick="changeStyle('github', 'GitHub 风格')">GitHub 风格</div>
+                                    <div class="style-option" onclick="changeStyle('minimal', '简洁风格')">简洁风格</div>
+                                    <div class="style-option" onclick="changeStyle('business', '商务风格')">商务风格</div>
+                                    <div class="style-option" onclick="changeStyle('creative', '创意风格')">创意风格</div>
+                                </div>
+                            </div>
+                            <button class="btn btn-success" onclick="copyToClipboard()">
+                                📋 复制 HTML
+                            </button>
+                        </div>
+                    </div>
+                    <div id="previewContent" class="preview-content markdown-body">
+                        <p>在左侧输入 Markdown 代码，这里将显示转换后的富文本效果。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="notification" class="notification"></div>
+
+    <script src="./dark-mode.js"></script>
+    <script>
+        const markdownEditor = document.getElementById('markdownEditor');
+        const previewContent = document.getElementById('previewContent');
+        const styleDropdown = document.getElementById('styleDropdown');
+        const styleBtn = document.getElementById('styleBtn');
+        const notification = document.getElementById('notification');
+
+        let currentStyle = 'default';
+        let updateTimeout;
+
+        // 配置 marked
+        marked.setOptions({
+            highlight: function(code, lang) {
+                if (lang && hljs.getLanguage(lang)) {
+                    try {
+                        return hljs.highlight(code, { language: lang }).value;
+                    } catch (err) {}
+                }
+                return hljs.highlightAuto(code).value;
+            },
+            breaks: true,
+            gfm: true
+        });
+
+        markdownEditor.addEventListener('input', function() {
+            clearTimeout(updateTimeout);
+            updateTimeout = setTimeout(updatePreview, 300);
+        });
+
+        function updatePreview() {
+            const markdownText = markdownEditor.value;
+            if (!markdownText.trim()) {
+                previewContent.innerHTML = '<p>在左侧输入 Markdown 代码，这里将显示转换后的富文本效果。</p>';
+                return;
+            }
+
+            try {
+                const htmlContent = marked.parse(markdownText);
+                previewContent.innerHTML = htmlContent;
+                
+                // 高亮代码
+                previewContent.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+            } catch (error) {
+                previewContent.innerHTML = `<p style="color: var(--danger-color);">Markdown 解析错误: ${error.message}</p>`;
+            }
+        }
+
+        function clearEditor() {
+            markdownEditor.value = '';
+            updatePreview();
+            showNotification('编辑器已清空', 'success');
+        }
+
+        function loadExample() {
+            const exampleMarkdown = `# Markdown 示例文档
+
+这是一个 **Markdown** 转富文本的示例文档，展示了各种常用的 Markdown 语法。
+
+## 文本格式
+
+- **粗体文本**
+- *斜体文本*
+- ***粗斜体文本***
+- ~~删除线文本~~
+- \`行内代码\`
+
+## 标题层级
+
+### 三级标题
+#### 四级标题
+##### 五级标题
+###### 六级标题
+
+## 列表
+
+### 无序列表
+- 第一项
+- 第二项
+  - 嵌套项 1
+  - 嵌套项 2
+- 第三项
+
+### 有序列表
+1. 第一步
+2. 第二步
+3. 第三步
+
+## 引用
+
+> 这是一个引用块。
+> 
+> 引用可以包含多行文本。
+> 
+> > 嵌套引用
+
+## 代码块
+
+\`\`\`javascript
+function greet(name) {
+    console.log(\`Hello, \${name}!\`);
+}
+
+greet('World');
+\`\`\`
+
+\`\`\`python
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+
+print(fibonacci(10))
+\`\`\`
+
+## 表格
+
+| 功能 | 支持 | 备注 |
+|------|------|------|
+| 标题 | ✅ | 1-6 级标题 |
+| 列表 | ✅ | 有序和无序 |
+| 代码 | ✅ | 支持语法高亮 |
+| 表格 | ✅ | 支持对齐 |
+| 链接 | ✅ | 内链和外链 |
+
+## 链接和图片
+
+这是一个 [链接示例](https://example.com)
+
+## 分隔线
+
+---
+
+## 任务列表
+
+- [x] 已完成任务
+- [ ] 待完成任务
+- [ ] 另一个待完成任务
+
+## 总结
+
+Markdown 是一种轻量级的标记语言，可以轻松转换为富文本格式。通过本工具，您可以：
+
+1. 实时预览 Markdown 效果
+2. 选择不同的样式风格
+3. 一键复制生成的 HTML 代码
+4. 支持代码语法高亮
+
+**Happy Markdown Writing! 🎉**`;
+
+            markdownEditor.value = exampleMarkdown;
+            updatePreview();
+            showNotification('已加载示例内容', 'success');
+        }
+
+        function toggleStyleDropdown() {
+            styleDropdown.classList.toggle('show');
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.style-selector')) {
+                styleDropdown.classList.remove('show');
+            }
+        });
+
+        function changeStyle(style, styleName) {
+            // 移除当前样式类
+            previewContent.classList.remove('style-default', 'style-github', 'style-minimal', 'style-business', 'style-creative');
+            
+            // 添加新样式类
+            if (style !== 'default') {
+                previewContent.classList.add('style-' + style);
+            }
+            
+            currentStyle = style;
+            styleBtn.innerHTML = `🎨 ${styleName}`;
+            
+            // 更新选项状态
+            document.querySelectorAll('.style-option').forEach(option => {
+                option.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            styleDropdown.classList.remove('show');
+            showNotification(`已切换到${styleName}`, 'success');
+        }
+
+        async function copyToClipboard() {
+            const htmlContent = previewContent.innerHTML;
+            if (!htmlContent || htmlContent.includes('在左侧输入')) {
+                showNotification('没有内容可以复制', 'warning');
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(htmlContent);
+                showNotification('HTML 代码已复制到剪贴板', 'success');
+            } catch (err) {
+                // 降级方案
+                const textArea = document.createElement('textarea');
+                textArea.value = htmlContent;
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showNotification('HTML 代码已复制到剪贴板', 'success');
+                } catch (err) {
+                    showNotification('复制失败，请手动选择复制', 'error');
+                }
+                document.body.removeChild(textArea);
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        function toggleTheme() {
+            window.darkModeManager.toggleTheme();
+            
+            // 切换代码高亮主题
+            const lightTheme = document.getElementById('hljs-light');
+            const darkTheme = document.getElementById('hljs-dark');
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            
+            lightTheme.disabled = isDark;
+            darkTheme.disabled = !isDark;
+        }
+
+        // 初始化时切换代码高亮主题
+        document.addEventListener('DOMContentLoaded', function() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const lightTheme = document.getElementById('hljs-light');
+            const darkTheme = document.getElementById('hljs-dark');
+            
+            lightTheme.disabled = isDark;
+            darkTheme.disabled = !isDark;
+            
+            updatePreview();
+        });
+    </script>
+</body>
+</html>
